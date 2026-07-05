@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All member/profile access is server-side via the Firebase Admin SDK,
+    // which bypasses these rules. Deny every direct client read/write so the
+    // members collection can only be touched through the app's server code.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

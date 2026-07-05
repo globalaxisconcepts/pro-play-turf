@@ -1,0 +1,77 @@
+// Pro Play Turf — Prisma schema.
+// Slice 2 introduces the money core: User, Wallet, and an append-only,
+// double-entry ledger. Later slices add leagues, matches, cards, etc.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLAYER
+  REVIEWER
+  ADMIN
+  SYSTEM
+}
+
+// Buckets money can live in. AVAILABLE/ESCROW are cached on user wallets;
+// HOUSE/PRIZE_POOL live on system wallets and are reconciled by summation.
+enum Bucket {
+  AVAILABLE
+  ESCROW
+  HOUSE
+  PRIZE_POOL
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  displayName String
+  role        Role     @default(PLAYER)
+  // Firebase Auth uid — the bridge to the Firestore member profile. Nullable so
+  // system/seed accounts (which have no Firebase identity) remain valid.
+  firebaseUid String?  @unique
+  wallet      Wallet?
+  createdAt   DateTime @default(now())
+}
+
+model Wallet {
+  id             String        @id @default(cuid())
+  userId         String        @unique
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Caches of the ledger; only LedgerService may mutate these.
+  availableCents BigInt        @default(0)
+  escrowCents    BigInt        @default(0)
+  currency       String        @default("USD")
+  entries        LedgerEntry[]
+  createdAt      DateTime      @default(now())
+}
+
+// Idempotency parent: one row per money action. Its id is the idempotency key —
+// posting the same txnId twice is a no-op (unique PK collision => already applied).
+model LedgerTransaction {
+  id        String        @id
+  reason    String // DEPOSIT | ADMIN_GRANT | ENTRY_HOLD | PRIZE | RAKE | PAYOUT | REFUND | ...
+  refType   String?
+  refId     String?
+  createdAt DateTime      @default(now())
+  entries   LedgerEntry[]
+}
+
+model LedgerEntry {
+  id          String            @id @default(cuid())
+  txnId       String
+  txn         LedgerTransaction @relation(fields: [txnId], references: [id], onDelete: Cascade)
+  walletId    String
+  wallet      Wallet            @relation(fields: [walletId], references: [id])
+  bucket      Bucket
+  amountCents BigInt // signed; the sum of all entries for one txnId is exactly 0
+  createdAt   DateTime          @default(now())
+
+  @@index([walletId])
+  @@index([txnId])
+}

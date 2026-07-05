@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050B17">
+<title>Pro Play Turf — Stake Your Turf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050B17; --surface-1:#0B1424; --surface-2:#0E1A2E; --surface-3:#132238;
+  --border:rgba(255,255,255,.08); --border-strong:rgba(255,255,255,.14);
+  --primary:#3DFF88; --primary-hover:#2FE578; --primary-ink:#04210F;
+  --accent:#38BDF8; --gold:#F6C453; --gold-deep:#E8A93B; --live:#FF4D4D; --warn:#FFB020;
+  --t1:#F4F7FB; --t2:#9FB0C6; --t3:#63748C;
+  --amateur:#7C8AA0; --intermediate:#C08457; --advanced:#C9D2DE; --elite:#F6C453;
+  --r-sm:8px; --r-md:14px; --r-lg:22px; --r-xl:28px; --pill:999px;
+  --shadow:0 12px 40px rgba(0,0,0,.45); --pop:0 20px 60px rgba(0,0,0,.55);
+  --glow:0 0 40px rgba(61,255,136,.25); --glow-gold:0 0 40px rgba(246,196,83,.22);
+  --max:1200px; --pad:24px;
+  --disp:'Archivo',system-ui,sans-serif; --tech:'Chakra Petch',monospace; --body:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--t1);font-family:var(--body);line-height:1.6;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--pad)}
+.eyebrow{font-family:var(--tech);font-size:12.5px;font-weight:600;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--primary)}
+.eyebrow.gold{color:var(--gold)} .eyebrow.cyan{color:var(--accent)}
+h1,h2,h3{font-family:var(--disp);font-weight:800;line-height:1.02;letter-spacing:-.02em}
+.section{padding:96px 0;position:relative}
+.section.alt{background:linear-gradient(180deg,var(--bg),#070f1e 50%,var(--bg))}
+.center{text-align:center}
+.sub{color:var(--t2);font-size:19px;max-width:620px;margin:18px auto 0}
+.mono{font-family:var(--tech);letter-spacing:.05em}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--body);font-weight:600;
+  font-size:15px;padding:14px 26px;border-radius:var(--pill);cursor:pointer;border:1px solid transparent;
+  transition:.18s ease;white-space:nowrap}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.btn-primary{background:var(--primary);color:var(--primary-ink)}
+.btn-primary:hover{background:var(--primary-hover);box-shadow:var(--glow);transform:translateY(-1px)}
+.btn-ghost{border-color:var(--border-strong);color:var(--t1);background:transparent}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#1A1204}
+.btn-gold:hover{box-shadow:var(--glow-gold);transform:translateY(-1px)}
+.btn-lg{padding:17px 34px;font-size:16px}
+
+/* nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;transition:.25s ease}
+.nav.scrolled{background:rgba(11,20,36,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:72px;max-width:var(--max);
+  margin:0 auto;padding:0 var(--pad);transition:height .25s}
+.nav.scrolled .nav-in{height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--disp);font-weight:900;font-size:20px;
+  letter-spacing:-.01em}
+.logo .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--primary),#1f9d5a);
+  display:grid;place-items:center;box-shadow:var(--glow);position:relative;flex:none}
+.logo .mark::before,.logo .mark::after{content:"";position:absolute;bottom:6px;width:3px;border-radius:2px;
+  background:var(--primary-ink)}
+.logo .mark::before{height:11px;left:11px;transform:rotate(-14deg)}
+.logo .mark::after{height:15px;right:11px;transform:rotate(12deg)}
+.logo b{color:var(--primary)}
+.nav-links{display:flex;gap:30px;font-size:14.5px;color:var(--t2);font-weight:500}
+.nav-links a{transition:.15s;position:relative}
+.nav-links a:hover{color:var(--t1)}
+.nav-right{display:flex;gap:12px;align-items:center}
+.nav-toggle{display:none}
+
+/* hero */
+.hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;padding-top:72px}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-bg::before{content:"";position:absolute;inset:0;
+  background:
+   radial-gradient(1000px 600px at 78% 15%,rgba(56,189,248,.14),transparent 60%),
+   radial-gradient(900px 700px at 12% 85%,rgba(61,255,136,.12),transparent 60%),
+   linear-gradient(180deg,#04101f 0%,#050b17 60%,#050b17 100%)}
+.pitch{position:absolute;inset:0;opacity:.5;
+  background-image:
+   linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+   linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:64px 64px;mask-image:radial-gradient(120% 90% at 50% 40%,#000 30%,transparent 78%)}
+.circle{position:absolute;top:20%;left:50%;transform:translateX(-50%);width:520px;height:520px;
+  border:1px solid rgba(61,255,136,.14);border-radius:50%;filter:blur(.3px)}
+.circle.two{width:340px;height:340px;top:28%;border-color:rgba(56,189,248,.12)}
+.scrim{position:absolute;inset:0;background:linear-gradient(0deg,var(--bg) 4%,transparent 60%)}
+.hero-in{position:relative;z-index:2;max-width:var(--max);margin:0 auto;padding:0 var(--pad);width:100%}
+.hero h1{font-size:clamp(48px,8.5vw,104px);text-transform:uppercase}
+.hero h1 .l2{display:block;margin-left:.6em;color:var(--t1)}
+.hero h1 .hl{color:transparent;-webkit-text-stroke:1.5px var(--primary);
+  text-shadow:0 0 30px rgba(61,255,136,.35)}
+.hero .sub{margin-left:0;text-align:left}
+.hero-cta{display:flex;gap:14px;margin-top:34px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);
+  border:1px solid var(--border);background:rgba(255,255,255,.02);padding:8px 15px;border-radius:var(--pill);
+  margin-top:28px}
+.chip .tick{color:var(--primary);font-weight:700}
+.partners{display:flex;align-items:center;gap:34px;margin-top:46px;flex-wrap:wrap}
+.partners span{font-family:var(--disp);font-weight:800;font-size:15px;letter-spacing:.12em;
+  color:var(--t3);text-transform:uppercase;transition:.2s}
+.partners span:hover{color:var(--t2)}
+.partners .lbl{font-family:var(--tech);font-weight:500;font-size:11px;letter-spacing:.2em;color:var(--t3)}
+
+/* stat strip */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;margin-top:64px}
+.stat{background:var(--surface-1);padding:26px 22px;text-align:center}
+.stat .n{font-family:var(--tech);font-weight:700;font-size:clamp(26px,3.4vw,40px);color:var(--t1)}
+.stat.gold .n{color:var(--gold)} .stat .k{font-size:12.5px;color:var(--t2);margin-top:4px;letter-spacing:.02em}
+
+/* generic reveal */
+.rv{opacity:0;transform:translateY(14px);transition:.6s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+
+.head{max-width:680px}
+.head.center{margin:0 auto}
+.head h2{font-size:clamp(30px,4.6vw,52px);margin-top:14px;text-transform:uppercase}
+
+/* 3-up cards */
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;
+  transition:.2s ease}
+.card:hover{border-color:var(--border-strong);transform:translateY(-3px);box-shadow:var(--shadow)}
+.card .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:22px;
+  background:rgba(61,255,136,.1);border:1px solid rgba(61,255,136,.2);margin-bottom:18px}
+.card.cyan .ic{background:rgba(56,189,248,.1);border-color:rgba(56,189,248,.22)}
+.card.gold .ic{background:rgba(246,196,83,.1);border-color:rgba(246,196,83,.22)}
+.card h3{font-size:20px;letter-spacing:-.01em}
+.card p{color:var(--t2);font-size:15px;margin-top:9px}
+.step-no{font-family:var(--tech);font-weight:700;font-size:13px;color:var(--t3);letter-spacing:.12em}
+
+/* split (monetize) */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-top:20px}
+.feat{display:flex;gap:16px;padding:18px 0;border-bottom:1px solid var(--border)}
+.feat:last-child{border-bottom:0}
+.feat .fic{width:42px;height:42px;flex:none;border-radius:11px;display:grid;place-items:center;font-size:19px;
+  background:rgba(61,255,136,.1);border:1px solid rgba(61,255,136,.2)}
+.feat h3{font-size:18px} .feat p{color:var(--t2);font-size:14.5px;margin-top:4px}
+/* wallet mockup */
+.wallet{background:linear-gradient(160deg,var(--surface-3),var(--surface-1));border:1px solid var(--border-strong);
+  border-radius:var(--r-xl);padding:26px;box-shadow:var(--pop);position:relative;overflow:hidden}
+.wallet::before{content:"";position:absolute;top:-40%;right:-10%;width:260px;height:260px;
+  background:radial-gradient(circle,rgba(61,255,136,.18),transparent 65%)}
+.wallet .wlab{font-size:12.5px;color:var(--t2);letter-spacing:.02em}
+.wallet .wbal{font-family:var(--tech);font-weight:700;font-size:42px;margin-top:4px}
+.wallet .wbal small{color:var(--primary);font-size:20px}
+.wallet .wrow{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.wallet .wsub{font-size:12.5px;color:var(--t3)}
+.wallet .badge-up{color:var(--primary);font-family:var(--tech);font-size:13px}
+.spark{display:flex;align-items:flex-end;gap:6px;height:70px;margin:22px 0}
+.spark i{flex:1;background:linear-gradient(180deg,var(--primary),rgba(61,255,136,.15));border-radius:4px 4px 0 0;opacity:.85}
+.wtx{display:flex;justify-content:space-between;font-size:13px;padding:11px 0;border-top:1px solid var(--border);color:var(--t2)}
+.wtx b{color:var(--t1);font-family:var(--tech);font-weight:600}
+.wtx .pos{color:var(--primary)}
+
+/* league structure */
+.league-hi{background:linear-gradient(135deg,rgba(246,196,83,.12),var(--surface-2));
+  border:1px solid rgba(246,196,83,.3);border-radius:var(--r-lg);padding:30px;box-shadow:var(--glow-gold)}
+.league-hi .pool{font-family:var(--tech);font-weight:700;font-size:44px;color:var(--gold)}
+.pr-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
+.pr{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:22px}
+.pr .arr{font-size:22px;font-weight:700}
+.pr.up{border-color:rgba(61,255,136,.25)} .pr.up .arr{color:var(--primary)}
+.pr.dn{border-color:rgba(255,77,77,.22)} .pr.dn .arr{color:var(--live)}
+.pr h3{font-size:17px;margin-top:8px} .pr p{color:var(--t2);font-size:14px;margin-top:6px}
+
+/* pass cards */
+.passes{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:48px}
+.pass{position:relative;border-radius:var(--r-lg);padding:22px;min-height:400px;display:flex;flex-direction:column;
+  background:linear-gradient(165deg,var(--surface-3),var(--surface-1));border:1px solid var(--border-strong);
+  overflow:hidden;transition:transform .12s ease,box-shadow .2s;transform-style:preserve-3d;will-change:transform}
+.pass::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.14) 47%,transparent 60%);
+  transform:translateX(-120%);transition:transform .8s ease}
+.pass:hover{box-shadow:var(--pop)} .pass:hover::after{transform:translateX(120%)}
+.pass .glow{position:absolute;top:-30%;left:50%;transform:translateX(-50%);width:200px;height:200px;
+  border-radius:50%;filter:blur(30px);opacity:.5}
+.pass .phead{display:flex;justify-content:space-between;align-items:flex-start;font-size:10.5px;
+  color:var(--t3);font-family:var(--tech);letter-spacing:.06em;text-transform:uppercase;position:relative;z-index:2}
+.pass .issuer{color:var(--t2)}
+.pass .status{font-family:var(--tech);font-weight:700;font-size:10px;letter-spacing:.08em;padding:5px 9px;
+  border-radius:var(--pill);text-transform:uppercase}
+.st-owned{color:var(--primary);background:rgba(61,255,136,.12);border:1px solid rgba(61,255,136,.3)}
+.st-listed{color:var(--accent);background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3)}
+.st-reserved{color:var(--warn);background:rgba(255,176,32,.12);border:1px solid rgba(255,176,32,.3)}
+.pass .access{font-size:11px;color:var(--t3);margin-top:28px;letter-spacing:.04em;text-transform:uppercase;position:relative;z-index:2}
+.pass .tier{position:relative;z-index:2;margin-top:6px}
+.pass .tier .t1{font-family:var(--disp);font-weight:900;font-size:30px;line-height:1;text-transform:uppercase}
+.pass .tier .t2{font-family:var(--tech);font-weight:600;font-size:13px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--t2);margin-top:4px}
+.pass .pname{font-size:14px;color:var(--t2);margin-top:14px;position:relative;z-index:2}
+.pass .pfoot{margin-top:auto;position:relative;z-index:2}
+.pass .fv{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.pass .amt{font-family:var(--tech);font-weight:700;font-size:26px;color:var(--gold)}
+.pass .serial{font-family:var(--tech);font-size:11px;color:var(--t3);letter-spacing:.12em;margin-top:12px;
+  padding-top:12px;border-top:1px solid var(--border)}
+/* tiers */
+.pass.champions{border-color:rgba(167,139,250,.4)}
+.pass.champions .glow{background:conic-gradient(from 0deg,#A78BFA,#38BDF8,#F6C453,#A78BFA)}
+.pass.champions .t1{background:linear-gradient(100deg,#C4B5FD,#7DD3FC,#F6C453);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pass.elite{border-color:rgba(246,196,83,.35)} .pass.elite .glow{background:var(--gold)}
+.pass.elite .t1{color:var(--gold)}
+.pass.advanced .glow{background:var(--advanced)} .pass.advanced .t1{color:var(--advanced)}
+.pass.intermediate .glow{background:var(--intermediate)} .pass.intermediate .t1{color:#D6A277}
+.mini-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
+.ms{text-align:center;padding:0 10px}
+.ms .msn{font-family:var(--tech);font-weight:700;color:var(--primary);font-size:14px}
+.ms h3{font-size:17px;margin-top:8px} .ms p{color:var(--t2);font-size:14px;margin-top:6px}
+
+/* fair play stat banner */
+.fp-stat{margin-top:44px;background:linear-gradient(135deg,rgba(61,255,136,.08),var(--surface-2));
+  border:1px solid rgba(61,255,136,.2);border-radius:var(--r-lg);padding:34px;text-align:center}
+.fp-stat .n{font-family:var(--tech);font-weight:700;font-size:clamp(40px,7vw,68px);color:var(--primary)}
+.fp-stat .k{color:var(--t2);letter-spacing:.04em;text-transform:uppercase;font-size:13px}
+
+/* final cta */
+.cta-band{background:linear-gradient(135deg,#08243f,#0a1a2e);border:1px solid var(--border-strong);
+  border-radius:var(--r-xl);padding:64px 40px;text-align:center;position:relative;overflow:hidden}
+.cta-band::before{content:"";position:absolute;inset:0;
+  background:radial-gradient(600px 300px at 50% 0%,rgba(61,255,136,.16),transparent 65%)}
+.cta-band h2{font-size:clamp(32px,5vw,58px);text-transform:uppercase;position:relative}
+.cta-band .sub{margin-bottom:28px;position:relative}
+.cta-band .btn{position:relative}
+
+/* footer */
+.foot{border-top:1px solid var(--border);padding:64px 0 28px;background:#040a14}
+.foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px}
+.foot h4{font-family:var(--tech);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);margin-bottom:16px}
+.foot a{display:block;color:var(--t2);font-size:14px;padding:6px 0;transition:.15s}
+.foot a:hover{color:var(--primary)}
+.foot .mission{color:var(--t2);font-size:14px;margin-top:14px;max-width:280px}
+.socials{display:flex;gap:12px;margin-top:18px}
+.socials a{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;
+  color:var(--t2);font-family:var(--tech);font-weight:600;font-size:13px}
+.socials a:hover{border-color:var(--primary);color:var(--primary)}
+.foot-bot{display:flex;justify-content:space-between;align-items:center;margin-top:48px;padding-top:24px;
+  border-top:1px solid var(--border);color:var(--t3);font-size:13px;flex-wrap:wrap;gap:12px}
+.foot-bot .made{font-family:var(--tech);letter-spacing:.04em}
+
+@media(max-width:900px){
+  .nav-links{display:none} .nav-toggle{display:grid}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .grid3,.mini-steps{grid-template-columns:1fr}
+  .split{grid-template-columns:1fr;gap:36px}
+  .passes{grid-template-columns:repeat(2,1fr)}
+  .pr-grid{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .section{padding:64px 0} .passes{grid-template-columns:1fr}
+  .hero h1 .l2{margin-left:.3em} .foot-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto} .rv{transition:none;opacity:1;transform:none}
+  .pass::after{display:none} .pass{transform:none!important}
+}
+.nav-toggle{background:transparent;border:1px solid var(--border-strong);border-radius:10px;width:42px;height:42px;
+  place-items:center;cursor:pointer}
+.nav-toggle span{width:18px;height:2px;background:var(--t1);position:relative;display:block}
+.nav-toggle span::before,.nav-toggle span::after{content:"";position:absolute;left:0;width:18px;height:2px;background:var(--t1)}
+.nav-toggle span::before{top:-6px} .nav-toggle span::after{top:6px}
+</style>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="nav-in">
+    <a href="#" class="logo"><span class="mark"></span>Pro Play <b>Turf</b></a>
+    <div class="nav-links">
+      <a href="#leagues">Leagues</a><a href="#scores">Scores</a>
+      <a href="#champions">Champions League</a><a href="#how">How It Works</a>
+    </div>
+    <div class="nav-right">
+      <a href="#" class="btn btn-ghost" style="padding:11px 20px">Log In</a>
+      <a href="#" class="btn btn-primary" style="padding:11px 22px">Play Now</a>
+      <button class="nav-toggle" aria-label="Menu"><span></span></button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-bg">
+    <div class="pitch"></div><div class="circle"></div><div class="circle two"></div>
+    <div class="scrim"></div>
+  </div>
+  <div class="hero-in">
+    <span class="eyebrow">1v1 · EA Sports FC</span>
+    <h1 style="margin-top:16px">Dominate<span class="l2"><span class="hl">The Turf</span></span></h1>
+    <p class="sub">Enter skill-based leagues, stream every match for total transparency, and get paid the moment you finish on top. No luck. Just play.</p>
+    <div class="hero-cta">
+      <a href="#" class="btn btn-primary btn-lg">Play Now — It's Free</a>
+      <a href="#how" class="btn btn-ghost btn-lg">See How It Works</a>
+    </div>
+    <div class="chip"><span class="tick">✓</span> Certified Cross-Play · PS5 · Xbox · PC</div>
+    <div class="partners">
+      <span class="lbl">Integrated with</span>
+      <span>YouTube</span><span>Twitch</span><span>EA Sports</span>
+    </div>
+    <div class="stats rv">
+      <div class="stat gold"><div class="n" data-count="250">$0</div><div class="k">Paid Out (K)</div></div>
+      <div class="stat"><div class="n" data-count="18">0</div><div class="k">Active Players (K)</div></div>
+      <div class="stat"><div class="n" data-count="100" data-suffix="%">0%</div><div class="k">Dispute Resolution</div></div>
+      <div class="stat"><div class="n">Top 3</div><div class="k">Get Paid Every League</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- HOW IT WORKS -->
+<section class="section alt" id="how">
+  <div class="wrap">
+    <div class="head center rv">
+      <span class="eyebrow">How It Works</span>
+      <h2>Your Path to Glory</h2>
+      <p class="sub">Three steps from lobby to payout. The platform handles verification, streaming, and prizes — you just win.</p>
+    </div>
+    <div class="grid3">
+      <div class="card rv"><div class="ic">🎮</div><span class="step-no">STEP 01</span>
+        <h3 style="margin-top:6px">Join a League</h3>
+        <p>Pick a division that matches your skill. Start free, or buy into paid leagues with real prize pools.</p></div>
+      <div class="card cyan rv"><div class="ic">📡</div><span class="step-no">STEP 02</span>
+        <h3 style="margin-top:6px">Play Live</h3>
+        <p>Stream each match to Twitch or YouTube. Our AI and game data verify every result automatically.</p></div>
+      <div class="card gold rv"><div class="ic">🏆</div><span class="step-no">STEP 03</span>
+        <h3 style="margin-top:6px">Rank & Earn</h3>
+        <p>Climb the table. Finish top-three and the prize pool hits your wallet — withdraw instantly.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- MONETIZE -->
+<section class="section" id="leagues">
+  <div class="wrap">
+    <div class="split">
+      <div class="rv">
+        <span class="eyebrow">For Serious Gamers</span>
+        <h2 style="font-size:clamp(28px,4.4vw,48px);margin-top:14px;text-transform:uppercase">Monetize Your God-Tier Skills</h2>
+        <p style="color:var(--t2);margin:16px 0 26px;font-size:16px">Your ranked grind should pay. Pro Play Turf turns wins into withdrawable earnings.</p>
+        <div class="feat"><div class="fic">💰</div><div><h3>Top-3 Payout Model</h3><p>Every league pays its top three finishers from the pooled buy-ins.</p></div></div>
+        <div class="feat"><div class="fic">📺</div><div><h3>Stream & Earn Revenue</h3><p>Grow an audience while you compete — your matches are the content.</p></div></div>
+        <div class="feat"><div class="fic">⚡</div><div><h3>Instant Withdrawals</h3><p>Cash out winnings the moment a match is verified. No waiting periods.</p></div></div>
+      </div>
+      <div class="wallet rv">
+        <div class="wlab">Available Balance</div>
+        <div class="wbal"><small>$</small>1,248<small>.50</small></div>
+        <div class="wrow"><span class="wsub">In escrow · $50.00</span><span class="badge-up">▲ +$320 this week</span></div>
+        <div class="spark">
+          <i style="height:40%"></i><i style="height:55%"></i><i style="height:35%"></i><i style="height:70%"></i>
+          <i style="height:60%"></i><i style="height:85%"></i><i style="height:72%"></i><i style="height:100%"></i>
+        </div>
+        <div class="wtx"><span>Elite Premier — 1st place</span><b class="pos">+$420.00</b></div>
+        <div class="wtx"><span>Instant withdrawal</span><b>-$200.00</b></div>
+        <div class="wtx"><span>Contender League — buy-in</span><b>-$10.00</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LEAGUE STRUCTURE -->
+<section class="section alt" id="champions">
+  <div class="wrap">
+    <div class="head rv">
+      <span class="eyebrow gold">League Structure</span>
+      <h2>Fight for Promotion.<br>Play for Payouts.</h2>
+      <p class="sub" style="margin-left:0">Every season you climb or you fall. Reach the top and the invite-only Champions League — and its five-figure pool — opens up.</p>
+    </div>
+    <div class="split" style="margin-top:40px">
+      <div class="league-hi rv">
+        <span class="eyebrow gold">Champions League · Invite Only</span>
+        <div class="pool" style="margin-top:10px">$15,000</div>
+        <div style="color:var(--t2);font-size:14px">Season prize pool · Elite Tier · Top 4 qualify</div>
+        <a href="#" class="btn btn-gold" style="margin-top:22px">View All Leagues</a>
+      </div>
+      <div class="pr-grid rv">
+        <div class="pr up"><div class="arr">▲</div><h3>Promotion</h3><p>Finish in the top 3 of your division and move up a tier next season — bigger pools, tougher opponents.</p></div>
+        <div class="pr dn"><div class="arr">▼</div><h3>Relegation</h3><p>Bottom 3 drop a division. Complacency costs you. Every match on the table matters.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAIR PLAY -->
+<section class="section" id="scores">
+  <div class="wrap">
+    <div class="head center rv">
+      <span class="eyebrow cyan">Fair Play</span>
+      <h2>Zero Tolerance</h2>
+      <p class="sub">Three layers of verification stand between the table and the truth. Cheaters don't last a season here.</p>
+    </div>
+    <div class="grid3">
+      <div class="card cyan rv"><div class="ic">🛡️</div><h3>API Validation</h3><p>Reported scores are checked against match data pulled from the game itself. Mismatches get flagged instantly.</p></div>
+      <div class="card cyan rv"><div class="ic">🤖</div><h3>AI Match Detection</h3><p>Every stream is watched by detection models tracking the scoreboard, disconnects, and irregular play in real time.</p></div>
+      <div class="card cyan rv"><div class="ic">⚖️</div><h3>Active Tribunal</h3><p>A 24/7 human review team resolves every dispute with the VOD in hand. No result stands unchecked.</p></div>
+    </div>
+    <div class="fp-stat rv">
+      <div class="n" data-count="100" data-suffix="%">0%</div>
+      <div class="k">Dispute Resolution Rate · Every Case, Every Season</div>
+    </div>
+  </div>
+</section>
+
+<!-- DIGITAL ASSETS / PASS CARDS -->
+<section class="section alt">
+  <div class="wrap">
+    <div class="head center rv">
+      <span class="eyebrow gold">Digital Assets</span>
+      <h2>Mint, Trade &amp; Surrender Cards</h2>
+      <p class="sub">Access Passes are your key to premium divisions. Earn them, trade them on the marketplace, or surrender one to climb.</p>
+    </div>
+    <div class="passes">
+      <div class="pass champions rv"><div class="glow"></div>
+        <div class="phead"><span>Official Pass</span><span class="issuer">Pro Play Turf</span></div>
+        <span class="status st-owned" style="position:absolute;top:20px;right:20px;z-index:3">Owned</span>
+        <div class="access">Access Level</div>
+        <div class="tier"><div class="t1">Champions</div><div class="t2">League Pass</div></div>
+        <div class="pname">Champions League Pass</div>
+        <div class="pfoot"><div class="fv">Face Value</div><div class="amt">$150.00</div>
+          <div class="serial">SERIAL · Q0HBTVBJT0</div></div>
+      </div>
+      <div class="pass elite rv"><div class="glow"></div>
+        <div class="phead"><span>Official Pass</span><span class="issuer">Pro Play Turf</span></div>
+        <span class="status st-listed" style="position:absolute;top:20px;right:20px;z-index:3">Listed</span>
+        <div class="access">Access Level</div>
+        <div class="tier"><div class="t1">Elite</div><div class="t2">Premier</div></div>
+        <div class="pname">Elite Premier Pass</div>
+        <div class="pfoot"><div class="fv">Face Value</div><div class="amt">$50.00</div>
+          <div class="serial">SERIAL · RUXJVEVQUK</div></div>
+      </div>
+      <div class="pass advanced rv"><div class="glow"></div>
+        <div class="phead"><span>Official Pass</span><span class="issuer">Pro Play Turf</span></div>
+        <span class="status st-owned" style="position:absolute;top:20px;right:20px;z-index:3">Owned</span>
+        <div class="access">Access Level</div>
+        <div class="tier"><div class="t1">Advanced</div><div class="t2">Conference</div></div>
+        <div class="pname">Advanced Conference Pass</div>
+        <div class="pfoot"><div class="fv">Face Value</div><div class="amt">$25.00</div>
+          <div class="serial">SERIAL · QURWQ0FEVg</div></div>
+      </div>
+      <div class="pass intermediate rv"><div class="glow"></div>
+        <div class="phead"><span>Official Pass</span><span class="issuer">Pro Play Turf</span></div>
+        <span class="status st-reserved" style="position:absolute;top:20px;right:20px;z-index:3">Reserved</span>
+        <div class="access">Access Level</div>
+        <div class="tier"><div class="t1">Interm.</div><div class="t2">Regional</div></div>
+        <div class="pname">Intermediate Regional Pass</div>
+        <div class="pfoot"><div class="fv">Face Value</div><div class="amt">$10.00</div>
+          <div class="serial">SERIAL · SU5UUkVHSU8</div></div>
+      </div>
+    </div>
+    <div class="mini-steps">
+      <div class="ms rv"><div class="msn">MINT &amp; ENTER</div><h3>Mint &amp; Enter</h3><p>Place top-three and mint a Pass to unlock the next division up.</p></div>
+      <div class="ms rv"><div class="msn">SURRENDER TO CLIMB</div><h3>Surrender to Climb</h3><p>Burn a Pass to fast-track your promotion into premium leagues.</p></div>
+      <div class="ms rv"><div class="msn">TRADE FOR VALUE</div><h3>Trade for Value</h3><p>List Passes on the marketplace and sell to other players for real balance.</p></div>
+    </div>
+    <div class="center" style="margin-top:40px"><a href="#" class="btn btn-gold btn-lg">Visit the Store</a></div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="section">
+  <div class="wrap">
+    <div class="cta-band rv">
+      <span class="eyebrow">Season is Live</span>
+      <h2 style="margin-top:12px">Ready to Stake<br>Your Turf?</h2>
+      <p class="sub">Create a free account, link your EA ID, and drop into your first league in under two minutes.</p>
+      <a href="#" class="btn btn-primary btn-lg">Create Free Account</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="#" class="logo"><span class="mark"></span>Pro Play <b>Turf</b></a>
+        <p class="mission">The premier arena for competitive EA Sports FC. Play. Prove. Profit.</p>
+        <div class="socials"><a href="#">X</a><a href="#">YT</a><a href="#">TW</a><a href="#">TT</a><a href="#">DC</a></div>
+      </div>
+      <div><h4>Platform</h4>
+        <a href="#">Find Leagues</a><a href="#">Live &amp; VODs</a><a href="#">Champions League</a>
+        <a href="#">Leaderboards</a><a href="#">Streaming Guide</a></div>
+      <div><h4>Company</h4>
+        <a href="#">About</a><a href="#">Press</a><a href="#">Contact</a><a href="#">Support Center</a></div>
+      <div><h4>Legal</h4>
+        <a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Responsible Play</a><a href="#">Cookie Settings</a></div>
+    </div>
+    <div class="foot-bot">
+      <span>© 2026 Pro Play Turf. All Rights Reserved.</span>
+      <span class="made">Made for the FC Community · 18+</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// nav scroll
+const nav=document.getElementById('nav');
+addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>20));
+
+// reveal
+const io=new IntersectionObserver((es)=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+// count-up
+const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const co=new IntersectionObserver((es)=>es.forEach(e=>{
+  if(!e.isIntersecting)return; co.unobserve(e.target);
+  e.target.querySelectorAll('[data-count]').forEach(n=>{
+    const end=+n.dataset.count, suf=n.dataset.suffix||'', pre=n.textContent.trim().startsWith('$')?'$':'';
+    if(reduce){n.textContent=pre+end+suf;return;}
+    let t=0;const dur=1100,s=performance.now();
+    const tick=now=>{const p=Math.min((now-s)/dur,1);n.textContent=pre+Math.round(end*(0.2+0.8*p*(2-p)))+suf;
+      if(p<1)requestAnimationFrame(tick);else n.textContent=pre+end+suf;};
+    requestAnimationFrame(tick);
+  });
+},{threshold:.4});
+document.querySelectorAll('.stats,.fp-stat').forEach(el=>co.observe(el));
+
+// pass card tilt
+if(!reduce){document.querySelectorAll('.pass').forEach(c=>{
+  c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+    c.style.transform=`perspective(800px) rotateY(${x*8}deg) rotateX(${-y*8}deg) translateY(-4px)`;});
+  c.addEventListener('mouseleave',()=>c.style.transform='');
+});}
+</script>
+</body>
+</html>

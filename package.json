@@ -1,0 +1,59 @@
+{
+  "name": "pro-play-turf",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "cross-env SKIP_ENV_VALIDATION=1 next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prisma:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:pglite-sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > tests/helpers/schema.sql"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^6.16.0",
+    "@prisma/client": "^6.16.0",
+    "@upstash/redis": "^1.35.0",
+    "async-mutex": "^0.5.0",
+    "firebase": "^12.15.0",
+    "firebase-admin": "^14.1.0",
+    "inngest": "^3.44.0",
+    "next": "16.2.10",
+    "pg": "^8.13.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0",
+    "@playwright/test": "^1.49.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.11.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "cross-env": "^7.0.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.10",
+    "pglite-prisma-adapter": "0.6.1",
+    "prettier": "^3.4.0",
+    "prisma": "^6.16.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.19.0",
+    "typescript": "^5",
+    "vitest": "^3.0.0"
+  }
+}
