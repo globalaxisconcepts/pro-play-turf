@@ -74,6 +74,38 @@ The marketing pages work with no infrastructure. To run the full app (auth + DB-
 
 See [`.env.example`](.env.example) for all variables.
 
+## Deploy to Vercel
+
+The app is Vercel-ready — Next.js is auto-detected and `prisma generate` runs in the build step.
+Deploy by importing the repo at [vercel.com/new](https://vercel.com/new), or run `vercel` from the
+CLI. Set these environment variables in the Vercel project (Production **and** Preview):
+
+| Variable | Kind | Notes |
+|---|---|---|
+| `DATABASE_URL` | secret | Neon **pooled** connection string (`...-pooler...?sslmode=require`). |
+| `FIREBASE_SERVICE_ACCOUNT_KEY` | secret | base64 of the Admin service-account JSON. |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | public | **must be set at build time** (inlined into the client). |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | public | `pro-play-turf.firebaseapp.com` |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | public | `pro-play-turf` |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | public | |
+| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | public | |
+| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | public | |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | secret | only if `LEDGER_LOCK_DRIVER=redis` |
+| `LEDGER_LOCK_DRIVER` | plain | set to `redis` in production so the per-wallet lock works across serverless instances |
+
+The `NEXT_PUBLIC_*` values are the public web config (same ones in your local `.env`); the two
+secrets are generated per the Quick start above.
+
+**After the first deploy:**
+1. Firebase console → Authentication → Settings → **Authorized domains** → add your Vercel
+   domain(s) (e.g. `pro-play-turf.vercel.app` + any custom domain) — required or Google sign-in
+   fails.
+2. Run the DB migration + seed against Neon once (locally with the prod `DATABASE_URL`, or
+   `vercel env pull` then `npm run db:push && npm run db:seed`).
+3. Deploy the Firestore rules: `firebase deploy --only firestore:rules`.
+
+Pick a Vercel region close to your Neon region for latency.
+
 ## Scripts
 
 | Script | What it does |
