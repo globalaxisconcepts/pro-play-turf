@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isDatabaseConfigured } from "@/lib/db";
 import { formatCents } from "@/lib/money";
 import { auth } from "@/server/auth";
 import { walletService } from "@/server/services";
@@ -40,6 +41,7 @@ async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
 
 export default async function WalletPage() {
   const { userId } = await auth();
+  const dbReady = isDatabaseConfigured();
   const balances = await safe(walletService.getBalances(userId), null);
   const availableCents = balances?.availableCents ?? 0n;
   const escrowCents = balances?.escrowCents ?? 0n;
@@ -65,15 +67,30 @@ export default async function WalletPage() {
             double-entry ledger. Real deposits/withdrawals arrive in Slice&nbsp;13.
           </p>
         </div>
-        <div className="wallet-actions">
-          <form action={grantTestCreditsAction}>
-            <button type="submit" className="btn btn-ghost">
-              Grant $100 test credits
-            </button>
-          </form>
-          <DepositModal />
-        </div>
+        {dbReady && (
+          <div className="wallet-actions">
+            <form action={grantTestCreditsAction}>
+              <button type="submit" className="btn btn-ghost">
+                Grant $100 test credits
+              </button>
+            </form>
+            <DepositModal />
+          </div>
+        )}
       </div>
+
+      {!dbReady && (
+        <div className="wallet-notice">
+          <span className="wallet-notice-ic" aria-hidden="true">
+            🔌
+          </span>
+          <div>
+            <strong>You&apos;re signed in.</strong> Authentication and your Firestore
+            profile are live. The wallet ledger activates automatically once a
+            Postgres database (Neon) is connected — no code change needed.
+          </div>
+        </div>
+      )}
 
       <div className="bal-grid">
         <div className="bal-card primary">

@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/shell/SiteFooter";
 import { SiteHeader } from "@/components/shell/SiteHeader";
+import { isDatabaseConfigured } from "@/lib/db";
 import { formatCents } from "@/lib/money";
 import { auth } from "@/server/auth";
 import { walletService } from "@/server/services";
@@ -25,7 +26,11 @@ export default async function AppLayout({
 
   return (
     <>
-      <SiteHeader variant="app" walletLabel={walletLabel} />
+      <SiteHeader
+        variant="app"
+        walletLabel={walletLabel}
+        depositsEnabled={isDatabaseConfigured()}
+      />
       {children}
       <SiteFooter />
     </>

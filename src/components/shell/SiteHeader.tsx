@@ -18,9 +18,11 @@ const PRIMARY_LINKS = [
 export function SiteHeader({
   variant = "marketing",
   walletLabel = "$0.00",
+  depositsEnabled = true,
 }: {
   variant?: Variant;
   walletLabel?: string;
+  depositsEnabled?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,13 +69,15 @@ export function SiteHeader({
                 </span>
                 {walletLabel}
               </Link>
-              <Link
-                href="/wallet?deposit=1"
-                className="btn btn-gold"
-                style={{ padding: "11px 20px" }}
-              >
-                + Deposit
-              </Link>
+              {depositsEnabled && (
+                <Link
+                  href="/wallet?deposit=1"
+                  className="btn btn-gold"
+                  style={{ padding: "11px 20px" }}
+                >
+                  + Deposit
+                </Link>
+              )}
               <SignOutButton />
             </>
           ) : (

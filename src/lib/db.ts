@@ -31,3 +31,12 @@ export const prisma: PrismaClient =
 if (env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
+
+/**
+ * Whether a real Postgres is wired. The seeded `.env` placeholder counts as
+ * "not configured", so the app can run on Firebase auth alone and light the
+ * wallet/ledger up automatically once a real DATABASE_URL is pasted in.
+ */
+export function isDatabaseConfigured(): boolean {
+  return Boolean(env.DATABASE_URL) && !env.DATABASE_URL!.includes("placeholder");
+}

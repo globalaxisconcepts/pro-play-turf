@@ -1,6 +1,6 @@
 import "server-only";
 import type { DecodedIdToken } from "firebase-admin/auth";
-import { prisma } from "@/lib/db";
+import { isDatabaseConfigured, prisma } from "@/lib/db";
 import { upsertMember } from "@/server/members/member-service";
 
 export interface ProvisionResult {
@@ -9,11 +9,14 @@ export interface ProvisionResult {
 }
 
 /**
- * Bridge a Firebase identity to app data on first sign-in. Creates BOTH the
- * Firestore member profile and the Postgres `User` anchor (keyed by
- * `firebaseUid`) + an empty `Wallet`. Race-safe via upserts on the unique keys.
- * Balances are NEVER written here — the wallet starts at 0 and only
- * LedgerService moves money.
+ * Bridge a Firebase identity to app data on sign-in. Always mirrors the profile
+ * into the Firestore member doc; provisions the Postgres `User` anchor + empty
+ * `Wallet` ONLY when a database is configured. Balances are NEVER written here.
+ *
+ * Fail-soft: neither a Firestore hiccup nor an absent/misconfigured Postgres
+ * breaks auth. Without a DB, the Firebase uid is the identity for now; once a
+ * real DATABASE_URL is wired, the Postgres user+wallet are created lazily on the
+ * next request (this runs on every authenticated request via getSession()).
  */
 export async function provisionUser(
   decoded: DecodedIdToken,
@@ -24,36 +27,51 @@ export async function provisionUser(
     decoded.name ?? (email ? email.split("@")[0] : "Player") ?? "Player";
   const avatarUrl = (decoded.picture as string | undefined) ?? null;
 
-  // Fast path: already provisioned — no writes.
-  const existing = await prisma.user.findUnique({
-    where: { firebaseUid },
-    select: { id: true, role: true },
-  });
-  if (existing) {
-    return { userId: existing.id, role: appRole(existing.role) };
+  // Canonical member profile in Firestore — best-effort (never break auth).
+  try {
+    await upsertMember(firebaseUid, { displayName, email, avatarUrl });
+  } catch (err) {
+    console.error("[provision] Firestore member upsert failed:", err);
   }
 
-  // Postgres anchor + empty wallet (race-safe on the unique columns).
-  const user = await prisma.user.upsert({
-    where: { firebaseUid },
-    update: {},
-    create: {
-      firebaseUid,
-      email: email ?? `${firebaseUid}@firebase.local`,
-      displayName,
-    },
-    select: { id: true, role: true },
-  });
-  await prisma.wallet.upsert({
-    where: { userId: user.id },
-    update: {},
-    create: { userId: user.id },
-  });
+  // No Postgres yet → use the Firebase uid as the identity for now.
+  if (!isDatabaseConfigured()) {
+    return { userId: firebaseUid, role: "PLAYER" };
+  }
 
-  // Canonical member profile in Firestore.
-  await upsertMember(firebaseUid, { displayName, email, avatarUrl });
+  try {
+    // Fast path: already provisioned — no writes.
+    const existing = await prisma.user.findUnique({
+      where: { firebaseUid },
+      select: { id: true, role: true },
+    });
+    if (existing) {
+      return { userId: existing.id, role: appRole(existing.role) };
+    }
 
-  return { userId: user.id, role: appRole(user.role) };
+    // Postgres anchor + empty wallet (race-safe on the unique columns).
+    const user = await prisma.user.upsert({
+      where: { firebaseUid },
+      update: {},
+      create: {
+        firebaseUid,
+        email: email ?? `${firebaseUid}@firebase.local`,
+        displayName,
+      },
+      select: { id: true, role: true },
+    });
+    await prisma.wallet.upsert({
+      where: { userId: user.id },
+      update: {},
+      create: { userId: user.id },
+    });
+    return { userId: user.id, role: appRole(user.role) };
+  } catch (err) {
+    // Stubborn / half-configured DB must not break sign-in — fall back to the
+    // Firebase identity; provisioning resumes automatically once the DB works.
+    console.error("[provision] Postgres provisioning failed:", err);
+    return { userId: firebaseUid, role: "PLAYER" };
+  }
 }
 
 function appRole(role: string): ProvisionResult["role"] {

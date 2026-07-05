@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { isDatabaseConfigured } from "@/lib/db";
 import { zPositiveCents } from "@/lib/money";
 import { auth } from "@/server/auth";
 import { paymentProvider } from "@/server/services";
@@ -14,6 +15,9 @@ export async function depositAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  if (!isDatabaseConfigured()) {
+    return { ok: false, error: "Connect a database (Neon) to enable deposits." };
+  }
   const parsed = depositSchema.safeParse({ amount: formData.get("amount") });
   if (!parsed.success) {
     return { ok: false, error: "Enter a valid amount greater than $0." };
@@ -36,6 +40,7 @@ export async function depositAction(
 
 /** Admin/dev: grant $100 in test credits (same ledger machinery as a deposit). */
 export async function grantTestCreditsAction(): Promise<void> {
+  if (!isDatabaseConfigured()) return; // no-op until Postgres is wired
   const { userId } = await auth();
   await paymentProvider.createDeposit({
     userId,
