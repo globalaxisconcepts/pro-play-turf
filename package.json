@@ -58,5 +58,9 @@
     "tsx": "^4.19.0",
     "typescript": "^5",
     "vitest": "^3.0.0"
+  },
+  "overridesComment": "Pin jose to the v5 line (dual CJS/ESM): jwks-rsa (via firebase-admin/auth) does require('jose'), jose v6 is ESM-only, and Vercel's function runtime disables require(ESM).",
+  "overrides": {
+    "jose": "^5.10.0"
   }
 }
