@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Wallet" };
 
 const REASON_LABEL: Record<string, string> = {
   DEPOSIT: "Deposit",
-  ADMIN_GRANT: "Test credit grant",
+  ADMIN_GRANT: "Bonus credit",
   ENTRY_HOLD: "League buy-in",
   REFUND: "Refund",
   PRIZE: "Prize payout",
@@ -40,8 +40,9 @@ async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
 }
 
 export default async function WalletPage() {
-  const { userId } = await auth();
+  const { userId, role } = await auth();
   const dbReady = isDatabaseConfigured();
+  const isAdmin = role === "ADMIN";
   const balances = await safe(walletService.getBalances(userId), null);
   const availableCents = balances?.availableCents ?? 0n;
   const escrowCents = balances?.escrowCents ?? 0n;
@@ -63,17 +64,19 @@ export default async function WalletPage() {
           <span className="eyebrow">Your Wallet</span>
           <h1>Balance &amp; History</h1>
           <p>
-            Everything runs on internal test credits, backed by a balanced
-            double-entry ledger. Real deposits/withdrawals arrive in Slice&nbsp;13.
+            Track your available balance, escrow, and match earnings — all in
+            one place.
           </p>
         </div>
         {dbReady && (
           <div className="wallet-actions">
-            <form action={grantTestCreditsAction}>
-              <button type="submit" className="btn btn-ghost">
-                Grant $100 test credits
-              </button>
-            </form>
+            {isAdmin && (
+              <form action={grantTestCreditsAction}>
+                <button type="submit" className="btn btn-ghost">
+                  Grant $100 test credits
+                </button>
+              </form>
+            )}
             <DepositModal />
           </div>
         )}
@@ -82,12 +85,11 @@ export default async function WalletPage() {
       {!dbReady && (
         <div className="wallet-notice">
           <span className="wallet-notice-ic" aria-hidden="true">
-            🔌
+            ✨
           </span>
           <div>
-            <strong>You&apos;re signed in.</strong> Authentication and your Firestore
-            profile are live. The wallet ledger activates automatically once a
-            Postgres database (Neon) is connected — no code change needed.
+            <strong>Your wallet is almost ready.</strong> Balances, deposits,
+            and match earnings will appear here soon.
           </div>
         </div>
       )}
@@ -114,8 +116,8 @@ export default async function WalletPage() {
             </div>
             <h3>No transactions yet</h3>
             <p>
-              Add test credits or make a deposit and your ledger entries will
-              appear here — every one backed by balanced double-entry.
+              Your deposits, league buy-ins, prizes, and payouts will appear
+              here.
             </p>
           </div>
         ) : (

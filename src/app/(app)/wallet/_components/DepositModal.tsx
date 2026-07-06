@@ -54,8 +54,7 @@ export function DepositModal() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Add Funds</h3>
             <p className="modal-sub">
-              Test credits — the real payment gateway arrives in Slice 13. Pick
-              an amount to add to your available balance.
+              Choose an amount to add to your available balance.
             </p>
             <form action={handleSubmit}>
               <div className="chips">

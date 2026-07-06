@@ -16,7 +16,10 @@ export async function depositAction(
   formData: FormData,
 ): Promise<ActionState> {
   if (!isDatabaseConfigured()) {
-    return { ok: false, error: "Connect a database (Neon) to enable deposits." };
+    return {
+      ok: false,
+      error: "Deposits aren't available right now — please try again later.",
+    };
   }
   const parsed = depositSchema.safeParse({ amount: formData.get("amount") });
   if (!parsed.success) {
