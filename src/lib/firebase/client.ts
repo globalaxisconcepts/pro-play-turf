@@ -25,3 +25,6 @@ export function getFirebaseAuth(): Auth {
 }
 
 export const googleProvider = new GoogleAuthProvider();
+// Always show the "Choose an account" screen instead of silently auto-selecting
+// the only signed-in Google account.
+googleProvider.setCustomParameters({ prompt: "select_account" });
