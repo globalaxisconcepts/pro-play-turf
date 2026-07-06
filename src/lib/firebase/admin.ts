@@ -1,7 +1,11 @@
 import "server-only";
 import { type App, cert, getApps, initializeApp } from "firebase-admin/app";
 import { type Auth, getAuth } from "firebase-admin/auth";
-import { type Firestore, getFirestore } from "firebase-admin/firestore";
+// Firestore is imported for its TYPE only (erased at runtime). The value module
+// (`firebase-admin/firestore`) pulls in the heavy gRPC stack, which can fail to
+// load on serverless at cold start — so it is loaded lazily in
+// getAdminFirestore() and never touches the REST-only auth path.
+import type { Firestore } from "firebase-admin/firestore";
 import { env } from "@/lib/env";
 
 /**
@@ -11,6 +15,7 @@ import { env } from "@/lib/env";
  * (mirrors db.ts / redis.ts), never at module top level.
  */
 let app: App | null = null;
+let firestore: Firestore | null = null;
 
 function parseServiceAccount(raw: string): {
   projectId: string;
@@ -60,6 +65,19 @@ export function getAdminAuth(): Auth {
   return getAuth(getAdminApp());
 }
 
-export function getAdminFirestore(): Firestore {
-  return getFirestore(getAdminApp());
+/**
+ * Firestore is loaded lazily (dynamic import) so the gRPC stack never lands in
+ * the auth cold-start path, and configured for REST transport (`preferRest`) —
+ * both to keep it serverless-friendly. Cached after first init.
+ */
+export async function getAdminFirestore(): Promise<Firestore> {
+  if (firestore) return firestore;
+  const { getFirestore } = await import("firebase-admin/firestore");
+  firestore = getFirestore(getAdminApp());
+  try {
+    firestore.settings({ preferRest: true });
+  } catch {
+    // settings() can only be applied once, before first use — ignore if already set.
+  }
+  return firestore;
 }

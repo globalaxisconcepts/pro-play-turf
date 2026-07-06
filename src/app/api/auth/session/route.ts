@@ -39,7 +39,8 @@ export async function POST(req: Request) {
       maxAge: SESSION_MAX_AGE_SECONDS,
     });
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (err) {
+    console.error("[api/auth/session] POST failed:", err);
     return NextResponse.json({ error: "Authentication failed." }, { status: 401 });
   }
 }

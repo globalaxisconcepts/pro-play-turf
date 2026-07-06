@@ -20,7 +20,8 @@ export interface MemberProfile {
 const COLLECTION = "members";
 
 export async function getMember(uid: string): Promise<MemberProfile | null> {
-  const snap = await getAdminFirestore().collection(COLLECTION).doc(uid).get();
+  const db = await getAdminFirestore();
+  const snap = await db.collection(COLLECTION).doc(uid).get();
   return snap.exists ? (snap.data() as MemberProfile) : null;
 }
 
@@ -33,7 +34,8 @@ export async function upsertMember(
     avatarUrl?: string | null;
   },
 ): Promise<void> {
-  const ref = getAdminFirestore().collection(COLLECTION).doc(uid);
+  const db = await getAdminFirestore();
+  const ref = db.collection(COLLECTION).doc(uid);
   const snap = await ref.get();
   if (snap.exists) {
     await ref.set(
