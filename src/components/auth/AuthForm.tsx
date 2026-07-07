@@ -5,7 +5,7 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
-  type UserCredential,
+  type User,
 } from "firebase/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -59,8 +59,8 @@ export function AuthForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  async function establishSession(cred: UserCredential) {
-    const idToken = await cred.user.getIdToken();
+  async function establishSession(user: User) {
+    const idToken = await user.getIdToken();
     const res = await fetch("/api/auth/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -86,7 +86,7 @@ export function AuthForm({
         if (isSignup && displayName.trim()) {
           await updateProfile(cred.user, { displayName: displayName.trim() });
         }
-        await establishSession(cred);
+        await establishSession(cred.user);
         finish();
       } catch (err) {
         setError(friendlyError(err));
@@ -97,11 +97,25 @@ export function AuthForm({
   function handleGoogle() {
     setError(null);
     startTransition(async () => {
+      const auth = getFirebaseAuth();
       try {
-        const cred = await signInWithPopup(getFirebaseAuth(), googleProvider);
-        await establishSession(cred);
+        const cred = await signInWithPopup(auth, googleProvider);
+        await establishSession(cred.user);
         finish();
       } catch (err) {
+        // COOP / mobile-Safari popup quirks can reject even when the sign-in
+        // actually completed. If the user ended up authenticated, recover
+        // silently; otherwise surface the error.
+        if (auth.currentUser) {
+          try {
+            await establishSession(auth.currentUser);
+            finish();
+            return;
+          } catch {
+            /* fall through to the error path */
+          }
+        }
+        console.error("[google-signin]", (err as { code?: string }).code, err);
         setError(friendlyError(err));
       }
     });
