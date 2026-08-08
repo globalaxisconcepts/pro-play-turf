@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import { walletLock } from "@/lib/lock";
+import { CardService } from "./cards/card-service";
+import { InternalCardCustodian } from "./cards/custodian";
 import { LedgerService } from "./ledger/ledger-service";
 import { JoinService } from "./leagues/join-service";
 import { LeagueService } from "./leagues/league-service";
@@ -22,7 +24,9 @@ export const walletService = new WalletService(prisma);
 export const leagueService = new LeagueService(prisma);
 export const joinService = new JoinService(prisma, ledgerService);
 export const prizeService = new PrizeService(prisma, ledgerService);
-export const seasonService = new SeasonService(prisma, prizeService);
+export const cardCustodian = new InternalCardCustodian();
+export const cardService = new CardService(prisma, cardCustodian);
+export const seasonService = new SeasonService(prisma, prizeService, cardService);
 export const matchService = new MatchService(prisma);
 export const reviewService = new ReviewService(prisma);
 /** Swap for a Blob/S3/R2 implementation to switch screenshot uploads on. */

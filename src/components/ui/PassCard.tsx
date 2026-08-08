@@ -1,4 +1,9 @@
-export type PassTier = "champions" | "elite" | "advanced" | "intermediate";
+export type PassTier =
+  | "champions"
+  | "elite"
+  | "advanced"
+  | "intermediate"
+  | "amateur";
 export type PassStatus = "owned" | "listed" | "reserved";
 
 const STATUS_LABEL: Record<PassStatus, string> = {

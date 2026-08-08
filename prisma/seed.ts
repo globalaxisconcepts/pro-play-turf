@@ -40,6 +40,9 @@ async function main() {
   // --- Season / divisions / leagues (always — this is the real ladder) ---
   await seedLeagues();
 
+  // --- Pass types (always — templates, not demo data) ---
+  await seedCardTypes();
+
   if (!SEED_DEMO_DATA) {
     await reconcile();
     console.log(
@@ -193,6 +196,33 @@ async function seedLeagues() {
       where: { id: l.id },
       update: {},
       create: l,
+    });
+  }
+}
+
+/**
+ * The Pass templates, one per tier. Face values mirror the tier's typical
+ * buy-in. Supply is uncapped except at Champions, where scarcity is the point.
+ */
+async function seedCardTypes() {
+  const types: Array<{
+    tier: Tier;
+    name: string;
+    qualifier: string;
+    faceValueCents: bigint;
+    maxSupply: number | null;
+  }> = [
+    { tier: "AMATEUR", name: "Amateur Open Pass", qualifier: "Open", faceValueCents: 0n, maxSupply: null },
+    { tier: "INTERMEDIATE", name: "Regional Access Pass", qualifier: "Regional", faceValueCents: 1_000n, maxSupply: null },
+    { tier: "ADVANCED", name: "Conference Access Pass", qualifier: "Conference", faceValueCents: 2_500n, maxSupply: null },
+    { tier: "ELITE", name: "Elite Premier Pass", qualifier: "Premier", faceValueCents: 5_000n, maxSupply: null },
+    { tier: "CHAMPIONS", name: "Champions League Pass", qualifier: "League Pass", faceValueCents: 15_000n, maxSupply: 16 },
+  ];
+  for (const t of types) {
+    await prisma.cardType.upsert({
+      where: { tier: t.tier },
+      update: {},
+      create: t,
     });
   }
 }

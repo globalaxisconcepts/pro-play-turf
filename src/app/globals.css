@@ -912,6 +912,12 @@ h3 {
 .pass.intermediate .t1 {
   color: #d6a277;
 }
+.pass.amateur .glow {
+  background: var(--amateur);
+}
+.pass.amateur .t1 {
+  color: var(--amateur);
+}
 .mini-steps {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -2384,6 +2390,30 @@ h3 {
   gap: 12px;
   flex-wrap: wrap;
   margin-top: 12px;
+}
+
+/* Store — Pass collection */
+.store-grid {
+  display: grid;
+  gap: 28px;
+  margin-top: 32px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+.store-item {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.store-item-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.store-provenance {
+  font-size: 12px;
+  color: var(--t3);
+  font-family: var(--tech);
 }
 
 /* Review queue (tribunal) */

@@ -20,6 +20,9 @@ CREATE TYPE "LeagueStatus" AS ENUM ('OPEN', 'FILLING', 'LIVE', 'ENDED');
 CREATE TYPE "StandingOutcome" AS ENUM ('PROMOTED', 'RELEGATED', 'STAYED');
 
 -- CreateEnum
+CREATE TYPE "CardStatus" AS ENUM ('OWNED', 'LISTED', 'SURRENDERED');
+
+-- CreateEnum
 CREATE TYPE "EntryStatus" AS ENUM ('ACTIVE', 'REFUNDED');
 
 -- CreateEnum
@@ -109,6 +112,35 @@ CREATE TABLE "Standing" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Standing_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CardType" (
+    "id" TEXT NOT NULL,
+    "tier" "Tier" NOT NULL,
+    "name" TEXT NOT NULL,
+    "qualifier" TEXT NOT NULL,
+    "faceValueCents" BIGINT NOT NULL DEFAULT 0,
+    "maxSupply" INTEGER,
+    "minted" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CardType_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CardInstance" (
+    "id" TEXT NOT NULL,
+    "cardTypeId" TEXT NOT NULL,
+    "ownerUserId" TEXT NOT NULL,
+    "serial" INTEGER NOT NULL,
+    "status" "CardStatus" NOT NULL DEFAULT 'OWNED',
+    "mintedForLeagueId" TEXT,
+    "mintedPosition" INTEGER,
+    "surrenderedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CardInstance_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -252,6 +284,18 @@ CREATE INDEX "Standing_userId_idx" ON "Standing"("userId");
 CREATE UNIQUE INDEX "Standing_leagueId_userId_key" ON "Standing"("leagueId", "userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "CardType_tier_key" ON "CardType"("tier");
+
+-- CreateIndex
+CREATE INDEX "CardInstance_ownerUserId_status_idx" ON "CardInstance"("ownerUserId", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CardInstance_cardTypeId_serial_key" ON "CardInstance"("cardTypeId", "serial");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CardInstance_mintedForLeagueId_ownerUserId_key" ON "CardInstance"("mintedForLeagueId", "ownerUserId");
+
+-- CreateIndex
 CREATE INDEX "Division_seasonId_idx" ON "Division"("seasonId");
 
 -- CreateIndex
@@ -319,6 +363,12 @@ ALTER TABLE "Standing" ADD CONSTRAINT "Standing_leagueId_fkey" FOREIGN KEY ("lea
 
 -- AddForeignKey
 ALTER TABLE "Standing" ADD CONSTRAINT "Standing_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardInstance" ADD CONSTRAINT "CardInstance_cardTypeId_fkey" FOREIGN KEY ("cardTypeId") REFERENCES "CardType"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardInstance" ADD CONSTRAINT "CardInstance_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Division" ADD CONSTRAINT "Division_seasonId_fkey" FOREIGN KEY ("seasonId") REFERENCES "Season"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -40,6 +40,9 @@ export class SeasonService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly prizes?: { settleLeague(leagueId: string): Promise<unknown> },
+    private readonly cards?: {
+      mintForPlacements(leagueId: string): Promise<unknown>;
+    },
   ) {}
 
   async closeSeason(
@@ -189,6 +192,10 @@ export class SeasonService {
             data: { status: "ENDED" },
           });
         });
+
+        // Passes mint against the frozen table, so this must follow it. Also
+        // idempotent, so a retry can't print a second Pass for the same finish.
+        if (this.cards) await this.cards.mintForPlacements(league.id);
 
         promoted += up.length;
         relegated += down.length;

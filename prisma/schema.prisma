@@ -44,6 +44,7 @@ model User {
   proofs      MatchProof[]
   disputes    MatchDispute[]    @relation("DisputesRaised")
   standings   Standing[]
+  cards       CardInstance[]
   createdAt   DateTime          @default(now())
 }
 
@@ -163,6 +164,56 @@ model Standing {
   @@unique([leagueId, userId])
   @@index([leagueId])
   @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Slice 9 — Access Passes. Minted on a top-3 placement, tradable (Slice 10), or
+// surrendered to climb a division. Custody goes through the CardCustodian
+// interface so an external custodian can replace the internal one without any
+// other subsystem changing.
+// ---------------------------------------------------------------------------
+
+enum CardStatus {
+  OWNED // in a player's collection
+  LISTED // offered on the marketplace
+  SURRENDERED // burned for a promotion — terminal, never reversible
+}
+
+/**
+ * The template. One per tier for now; supply is tracked here.
+ */
+model CardType {
+  id             String         @id @default(cuid())
+  tier           Tier           @unique
+  name           String
+  qualifier      String
+  faceValueCents BigInt         @default(0)
+  /// null = uncapped supply
+  maxSupply      Int?
+  minted         Int            @default(0)
+  createdAt      DateTime       @default(now())
+  instances      CardInstance[]
+}
+
+model CardInstance {
+  id                String     @id @default(cuid())
+  cardTypeId        String
+  cardType          CardType   @relation(fields: [cardTypeId], references: [id], onDelete: Cascade)
+  ownerUserId       String
+  owner             User       @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  /// 1-based within its type; the collectible's identity.
+  serial            Int
+  status            CardStatus @default(OWNED)
+  // Provenance — where this Pass came from.
+  mintedForLeagueId String?
+  mintedPosition    Int?
+  surrenderedAt     DateTime?
+  createdAt         DateTime   @default(now())
+
+  @@unique([cardTypeId, serial])
+  // One Pass per player per league: makes mint-on-placement idempotent.
+  @@unique([mintedForLeagueId, ownerUserId])
+  @@index([ownerUserId, status])
 }
 
 model Division {
