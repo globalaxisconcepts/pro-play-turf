@@ -19,6 +19,12 @@ CREATE TYPE "LeagueStatus" AS ENUM ('OPEN', 'FILLING', 'LIVE', 'ENDED');
 -- CreateEnum
 CREATE TYPE "EntryStatus" AS ENUM ('ACTIVE', 'REFUNDED');
 
+-- CreateEnum
+CREATE TYPE "MatchStatus" AS ENUM ('SCHEDULED', 'LIVE', 'AWAITING', 'VERIFIED', 'UNDER_REVIEW', 'DISPUTED', 'VOID');
+
+-- CreateEnum
+CREATE TYPE "ProofKind" AS ENUM ('SCREENSHOT', 'STREAM_URL');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -106,6 +112,47 @@ CREATE TABLE "League" (
 );
 
 -- CreateTable
+CREATE TABLE "Match" (
+    "id" TEXT NOT NULL,
+    "leagueId" TEXT NOT NULL,
+    "round" INTEGER NOT NULL,
+    "homeUserId" TEXT NOT NULL,
+    "awayUserId" TEXT NOT NULL,
+    "status" "MatchStatus" NOT NULL DEFAULT 'SCHEDULED',
+    "homeScore" INTEGER,
+    "awayScore" INTEGER,
+    "scheduledAt" TIMESTAMP(3),
+    "verifiedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Match_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MatchSubmission" (
+    "id" TEXT NOT NULL,
+    "matchId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "homeScore" INTEGER NOT NULL,
+    "awayScore" INTEGER NOT NULL,
+    "submittedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MatchSubmission_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "MatchProof" (
+    "id" TEXT NOT NULL,
+    "matchId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "kind" "ProofKind" NOT NULL,
+    "url" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "MatchProof_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "LeagueEntry" (
     "id" TEXT NOT NULL,
     "leagueId" TEXT NOT NULL,
@@ -146,6 +193,27 @@ CREATE INDEX "League_divisionId_idx" ON "League"("divisionId");
 CREATE INDEX "League_status_idx" ON "League"("status");
 
 -- CreateIndex
+CREATE INDEX "Match_leagueId_status_idx" ON "Match"("leagueId", "status");
+
+-- CreateIndex
+CREATE INDEX "Match_homeUserId_idx" ON "Match"("homeUserId");
+
+-- CreateIndex
+CREATE INDEX "Match_awayUserId_idx" ON "Match"("awayUserId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Match_leagueId_homeUserId_awayUserId_key" ON "Match"("leagueId", "homeUserId", "awayUserId");
+
+-- CreateIndex
+CREATE INDEX "MatchSubmission_matchId_idx" ON "MatchSubmission"("matchId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MatchSubmission_matchId_userId_key" ON "MatchSubmission"("matchId", "userId");
+
+-- CreateIndex
+CREATE INDEX "MatchProof_matchId_idx" ON "MatchProof"("matchId");
+
+-- CreateIndex
 CREATE INDEX "LeagueEntry_leagueId_status_idx" ON "LeagueEntry"("leagueId", "status");
 
 -- CreateIndex
@@ -168,6 +236,27 @@ ALTER TABLE "Division" ADD CONSTRAINT "Division_seasonId_fkey" FOREIGN KEY ("sea
 
 -- AddForeignKey
 ALTER TABLE "League" ADD CONSTRAINT "League_divisionId_fkey" FOREIGN KEY ("divisionId") REFERENCES "Division"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Match" ADD CONSTRAINT "Match_leagueId_fkey" FOREIGN KEY ("leagueId") REFERENCES "League"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Match" ADD CONSTRAINT "Match_homeUserId_fkey" FOREIGN KEY ("homeUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Match" ADD CONSTRAINT "Match_awayUserId_fkey" FOREIGN KEY ("awayUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchSubmission" ADD CONSTRAINT "MatchSubmission_matchId_fkey" FOREIGN KEY ("matchId") REFERENCES "Match"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchSubmission" ADD CONSTRAINT "MatchSubmission_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchProof" ADD CONSTRAINT "MatchProof_matchId_fkey" FOREIGN KEY ("matchId") REFERENCES "Match"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchProof" ADD CONSTRAINT "MatchProof_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LeagueEntry" ADD CONSTRAINT "LeagueEntry_leagueId_fkey" FOREIGN KEY ("leagueId") REFERENCES "League"("id") ON DELETE CASCADE ON UPDATE CASCADE;

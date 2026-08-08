@@ -7,10 +7,21 @@ import { formatCents } from "@/lib/money";
 import { getSession } from "@/server/auth";
 import { prizeBreakdown } from "@/server/leagues/prize";
 import { projectedPoolCents, spotsLeft } from "@/server/leagues/types";
-import { leagueService, walletService } from "@/server/services";
+import { leagueService, matchService, walletService } from "@/server/services";
 import { JoinPanel, type JoinAvailability } from "./_components/JoinPanel";
 
 export const dynamic = "force-dynamic";
+
+/** Short fixture-list labels for each match state. */
+const STATUS_COPY: Record<string, string> = {
+  SCHEDULED: "To play",
+  LIVE: "Live",
+  AWAITING: "Awaiting",
+  VERIFIED: "Verified",
+  UNDER_REVIEW: "In review",
+  DISPUTED: "Disputed",
+  VOID: "Void",
+};
 
 const TABS = [
   { key: "standings", label: "Standings" },
@@ -57,10 +68,11 @@ export default async function LeagueDetailPage({
 
   const tab = toTab(sp);
   const session = await getSession();
-  const [entry, balances, entrants] = await Promise.all([
+  const [entry, balances, entrants, fixtures] = await Promise.all([
     session ? leagueService.entryFor(id, session.userId) : null,
     session ? walletService.getBalances(session.userId) : null,
     leagueService.entrants(id),
+    matchService.listFixtures(id),
   ]);
 
   const isFree = row.buyInCents === 0n;
@@ -205,18 +217,49 @@ export default async function LeagueDetailPage({
           </>
         )}
 
-        {tab === "fixtures" && (
-          <div className="empty">
-            <div className="ic" aria-hidden>
-              📅
+        {tab === "fixtures" &&
+          (fixtures.length === 0 ? (
+            <div className="empty">
+              <div className="ic" aria-hidden>
+                📅
+              </div>
+              <h3>Fixtures aren&apos;t scheduled yet</h3>
+              <p>
+                The schedule is generated once the league fills and kicks off.
+                You&apos;ll be notified when your first match is set.
+              </p>
             </div>
-            <h3>Fixtures aren&apos;t scheduled yet</h3>
-            <p>
-              The schedule is generated once the league fills and kicks off.
-              You&apos;ll be notified when your first match is set.
-            </p>
-          </div>
-        )}
+          ) : (
+            <ol className="lg-fixtures">
+              {fixtures.map((f) => (
+                <li key={f.id}>
+                  <Link href={`/matches/${f.id}`} className="lg-fixture">
+                    <span className="lg-fixture-round">R{f.round}</span>
+                    <span className="lg-fixture-teams">
+                      <span
+                        data-you={f.homeUserId === session?.userId || undefined}
+                      >
+                        {f.home.displayName}
+                      </span>
+                      <span className="lg-fixture-score">
+                        {f.status === "VERIFIED"
+                          ? `${f.homeScore}–${f.awayScore}`
+                          : "vs"}
+                      </span>
+                      <span
+                        data-you={f.awayUserId === session?.userId || undefined}
+                      >
+                        {f.away.displayName}
+                      </span>
+                    </span>
+                    <span className="lg-badge" data-status={f.status}>
+                      {STATUS_COPY[f.status] ?? f.status}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          ))}
 
         {tab === "prize" && (
           <>

@@ -29,16 +29,20 @@ enum Bucket {
 }
 
 model User {
-  id          String        @id @default(cuid())
-  email       String        @unique
+  id          String            @id @default(cuid())
+  email       String            @unique
   displayName String
-  role        Role          @default(PLAYER)
+  role        Role              @default(PLAYER)
   // Firebase Auth uid — the bridge to the Firestore member profile. Nullable so
   // system/seed accounts (which have no Firebase identity) remain valid.
-  firebaseUid String?       @unique
+  firebaseUid String?           @unique
   wallet      Wallet?
   entries     LeagueEntry[]
-  createdAt   DateTime      @default(now())
+  homeMatches Match[]           @relation("HomeMatches")
+  awayMatches Match[]           @relation("AwayMatches")
+  submissions MatchSubmission[]
+  proofs      MatchProof[]
+  createdAt   DateTime          @default(now())
 }
 
 model Wallet {
@@ -143,6 +147,7 @@ model League {
   startsAt   DateTime?
   createdAt  DateTime      @default(now())
   entries    LeagueEntry[]
+  matches    Match[]
 
   @@index([divisionId])
   @@index([status])
@@ -157,6 +162,85 @@ model League {
 enum EntryStatus {
   ACTIVE // holding escrow, competing
   REFUNDED // withdrew before the league started; escrow released
+}
+
+// ---------------------------------------------------------------------------
+// Slice 5 — matches. There is no EA match API: truth is what both players
+// submit, backed by proof, and adjudicated by humans when they disagree. A
+// match therefore holds NO authoritative score until two submissions agree.
+// ---------------------------------------------------------------------------
+
+enum MatchStatus {
+  SCHEDULED // fixture exists, not played
+  LIVE // in progress
+  AWAITING // one player has reported, waiting on the other
+  VERIFIED // both reported the same score — this is the result
+  UNDER_REVIEW // reports disagree or were flagged (Slice 6)
+  DISPUTED // a player formally contested it (Slice 6)
+  VOID // annulled by a reviewer
+}
+
+enum ProofKind {
+  SCREENSHOT // uploaded image (needs blob storage; stubbed until then)
+  STREAM_URL // Twitch/YouTube VOD link — needs no storage
+}
+
+model Match {
+  id          String            @id @default(cuid())
+  leagueId    String
+  league      League            @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  round       Int
+  homeUserId  String
+  home        User              @relation("HomeMatches", fields: [homeUserId], references: [id], onDelete: Cascade)
+  awayUserId  String
+  away        User              @relation("AwayMatches", fields: [awayUserId], references: [id], onDelete: Cascade)
+  status      MatchStatus       @default(SCHEDULED)
+  // Only set once VERIFIED — an unverified match has no score, by design.
+  homeScore   Int?
+  awayScore   Int?
+  scheduledAt DateTime?
+  verifiedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  submissions MatchSubmission[]
+  proofs      MatchProof[]
+
+  // One fixture per ordered pair per league.
+  @@unique([leagueId, homeUserId, awayUserId])
+  @@index([leagueId, status])
+  @@index([homeUserId])
+  @@index([awayUserId])
+}
+
+/**
+ * One player's report of the result. Never overwritten — it is evidence.
+ */
+model MatchSubmission {
+  id          String   @id @default(cuid())
+  matchId     String
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeScore   Int
+  awayScore   Int
+  submittedAt DateTime @default(now())
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+}
+
+model MatchProof {
+  id        String    @id @default(cuid())
+  matchId   String
+  match     Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      ProofKind
+  // For STREAM_URL this is the link; for SCREENSHOT it's the storage key/URL
+  // handed back by ProofStorage.
+  url       String
+  createdAt DateTime  @default(now())
+
+  @@index([matchId])
 }
 
 model LeagueEntry {

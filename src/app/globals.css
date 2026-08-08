@@ -2155,6 +2155,197 @@ h3 {
   text-decoration: underline;
 }
 
+/* Fixtures list (league detail) */
+.lg-fixtures {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+}
+.lg-fixture {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  transition: border-color 0.18s ease;
+}
+.lg-fixture:hover {
+  border-color: var(--border-strong);
+}
+.lg-fixture-round {
+  font-family: var(--tech);
+  font-size: 11px;
+  color: var(--t3);
+  min-width: 28px;
+}
+.lg-fixture-teams {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  font-size: 14px;
+  color: var(--t1);
+}
+.lg-fixture-teams [data-you] {
+  color: var(--primary);
+  font-weight: 600;
+}
+.lg-fixture-score {
+  font-family: var(--tech);
+  font-weight: 700;
+  color: var(--t2);
+  min-width: 42px;
+  text-align: center;
+}
+
+/* Match Room */
+.mr-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 8px;
+}
+.mr-head h1 {
+  font-size: clamp(26px, 4vw, 40px);
+  margin-top: 8px;
+}
+.mr-v {
+  color: var(--t3);
+  font-size: 0.6em;
+  font-family: var(--tech);
+}
+.mr-scoreboard {
+  margin-top: 28px;
+  padding: 28px;
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  text-align: center;
+}
+.mr-final {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  font-family: var(--tech);
+  font-size: clamp(40px, 9vw, 68px);
+  font-weight: 700;
+  color: var(--t1);
+}
+.mr-final-empty {
+  color: var(--t3);
+}
+.mr-dash {
+  color: var(--t3);
+}
+.mr-next {
+  margin-top: 14px;
+  color: var(--t2);
+  font-size: 14px;
+}
+.mr-panel {
+  margin-top: 28px;
+  padding: 22px;
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+.mr-panel h2 {
+  font-size: 17px;
+  font-family: var(--disp);
+  margin-bottom: 10px;
+}
+.mr-hint {
+  color: var(--t3);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.mr-yours {
+  color: var(--t2);
+  font-size: 14px;
+}
+.mr-ok {
+  color: var(--primary);
+  font-size: 13px;
+  margin-top: 10px;
+}
+.mr-report {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mr-score-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+}
+.mr-score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--t3);
+  text-align: center;
+}
+.mr-score input {
+  width: 88px;
+  height: 64px;
+  text-align: center;
+  font-family: var(--tech);
+  font-size: 28px;
+  font-weight: 700;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--t1);
+}
+.mr-score input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.22);
+}
+.mr-report input[type="url"] {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  margin-top: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--t1);
+  font-size: 14px;
+}
+.mr-proofs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  font-size: 13px;
+}
+.mr-proofs li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+.mr-proofs a {
+  color: var(--accent);
+  word-break: break-all;
+}
+.mr-proof-kind {
+  font-family: var(--tech);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t3);
+  flex: none;
+}
+
 /* Admin console */
 .admin-shell {
   min-height: 100vh;

@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 import { TIER_LABEL, TIER_ORDER } from "@/lib/leagues";
 import { leagueService } from "@/server/services";
+import { spotsLeft } from "@/server/leagues/types";
 import {
   createDivisionAction,
   createLeagueAction,
   createSeasonAction,
+  generateFixturesAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Admin · Leagues" };
 
 export default async function AdminLeaguesPage() {
-  const seasons = await leagueService.listSeasonsWithDivisions();
+  const [seasons, listing] = await Promise.all([
+    leagueService.listSeasonsWithDivisions(),
+    leagueService.listCurrentSeasonLeagues(),
+  ]);
   const divisions = seasons.flatMap((s) =>
     s.divisions.map((d) => ({ ...d, seasonName: s.name })),
   );
@@ -133,6 +138,62 @@ export default async function AdminLeaguesPage() {
             Create league
           </button>
         </form>
+      </section>
+
+      <section className="admin-list">
+        <h2>Kick off a league</h2>
+        <p className="admin-sub">
+          Builds the round-robin from everyone currently holding a seat and sets
+          the league LIVE. Entries close at that point, so do it once the field
+          is set — it can&apos;t be undone or re-run.
+        </p>
+        {listing.rows.length === 0 ? (
+          <p className="admin-empty">No leagues in the current season.</p>
+        ) : (
+          <table className="tx-table">
+            <thead>
+              <tr>
+                <th>League</th>
+                <th>Entrants</th>
+                <th>Status</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {listing.rows.map((l) => {
+                const ready =
+                  (l.status === "OPEN" || l.status === "FILLING") &&
+                  l.spotsFilled >= 2;
+                return (
+                  <tr key={l.id}>
+                    <td>{l.name}</td>
+                    <td>
+                      {l.spotsFilled} / {l.capacity}{" "}
+                      <span className="admin-pill">
+                        {spotsLeft(l)} free
+                      </span>
+                    </td>
+                    <td>{l.status}</td>
+                    <td>
+                      <form action={generateFixturesAction}>
+                        <input type="hidden" name="leagueId" value={l.id} />
+                        <button
+                          type="submit"
+                          className="btn btn-ghost"
+                          disabled={!ready}
+                        >
+                          {l.status === "OPEN" || l.status === "FILLING"
+                            ? "Kick off"
+                            : "Started"}
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
       </section>
 
       <section className="admin-list">

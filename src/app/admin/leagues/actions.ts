@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { parseCents } from "@/lib/money";
 import { auth } from "@/server/auth";
-import { leagueService } from "@/server/services";
+import { leagueService, matchService } from "@/server/services";
 
 /** Server actions are directly invocable — re-check ADMIN on every one. */
 async function requireAdmin(): Promise<void> {
@@ -83,5 +83,18 @@ export async function createLeagueAction(formData: FormData): Promise<void> {
     status: parsed.status,
   });
   revalidatePath("/admin/leagues");
+  revalidatePath("/leagues");
+}
+
+/**
+ * Kick a league off: build its round-robin from the current entrants and set it
+ * LIVE. Deliberately manual — an admin decides when a league stops filling.
+ */
+export async function generateFixturesAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const leagueId = z.string().min(1).parse(formData.get("leagueId"));
+  await matchService.generateFixtures(leagueId);
+  revalidatePath("/admin/leagues");
+  revalidatePath(`/leagues/${leagueId}`);
   revalidatePath("/leagues");
 }
