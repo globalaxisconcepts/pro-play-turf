@@ -20,6 +20,14 @@ export interface SeasonListing {
   rows: LeagueRow[];
 }
 
+/** One prize actually paid out of a settled league's pool. */
+export interface Payout {
+  position: number;
+  userId: string;
+  displayName: string;
+  amountCents: bigint;
+}
+
 /** A player holding a seat in a league. */
 export interface Entrant {
   userId: string;
@@ -146,6 +154,38 @@ export class LeagueService {
       },
     });
     return entry && entry.status === "ACTIVE" ? entry : null;
+  }
+
+  /**
+   * What a settled league actually paid, read back from the ledger rather than
+   * recomputed — the ledger is the source of truth for money, so this can never
+   * advertise a payout that didn't happen. Empty until settlement.
+   */
+  async payoutsFor(leagueId: string): Promise<Payout[]> {
+    const entries = await this.prisma.ledgerEntry.findMany({
+      where: {
+        bucket: "AVAILABLE",
+        amountCents: { gt: 0 },
+        txn: { reason: "PRIZE", refType: "league", refId: leagueId },
+      },
+      orderBy: { amountCents: "desc" },
+      select: {
+        amountCents: true,
+        wallet: {
+          select: {
+            userId: true,
+            user: { select: { displayName: true } },
+          },
+        },
+      },
+    });
+
+    return entries.map((e, i) => ({
+      position: i + 1,
+      userId: e.wallet.userId,
+      displayName: e.wallet.user.displayName,
+      amountCents: e.amountCents,
+    }));
   }
 
   // --- Admin authoring --------------------------------------------------

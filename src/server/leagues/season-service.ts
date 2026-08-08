@@ -33,7 +33,14 @@ export class SeasonNotFoundError extends Error {
  * second season.
  */
 export class SeasonService {
-  constructor(private readonly prisma: PrismaClient) {}
+  /**
+   * `prizes` is optional so the lifecycle can be exercised without money in
+   * play; when supplied, closing a season also settles every league's pool.
+   */
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly prizes?: { settleLeague(leagueId: string): Promise<unknown> },
+  ) {}
 
   async closeSeason(
     seasonId: string,
@@ -134,6 +141,10 @@ export class SeasonService {
         const { promoted: up, relegated: down } = zonesFor(rows, zones);
         const upSet = new Set(up);
         const downSet = new Set(down);
+
+        // Pay out before the table is frozen and the league is closed. Settling
+        // is idempotent, so a retry after a partial close cannot double-pay.
+        if (this.prizes) await this.prizes.settleLeague(league.id);
 
         await this.prisma.$transaction(async (tx) => {
           for (const row of rows) {

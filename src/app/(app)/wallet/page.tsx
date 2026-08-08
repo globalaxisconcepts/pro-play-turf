@@ -14,6 +14,7 @@ const REASON_LABEL: Record<string, string> = {
   DEPOSIT: "Deposit",
   ADMIN_GRANT: "Bonus credit",
   ENTRY_HOLD: "League buy-in",
+  ENTRY_REFUND: "Buy-in returned",
   REFUND: "Refund",
   PRIZE: "Prize payout",
   PAYOUT: "Withdrawal",

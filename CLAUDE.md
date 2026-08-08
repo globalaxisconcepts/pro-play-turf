@@ -6,9 +6,11 @@ internal double-entry **ledger** with test credits until a real payment gateway 
 
 **Current status:** shipped — **Slice 0 (foundations)** + **Slice 2 (money core)** + **Slice 1
 (Firebase auth + Firestore member profiles)** + **Slice 3 (seasons/divisions/leagues + public
-browse + admin authoring)** + **Slice 4 (join a league — buy-in escrow, capacity/double-join
-guards, pre-start refund, tabbed league detail)**. Next per the build plan: Slice 5 (fixtures +
-submit result + proof).
+browse + admin authoring)** + **Slice 4 (join + buy-in escrow)** + **Slice 5 (fixtures, Match
+Room, both-player result reporting)** + **Slice 6 (validator pipeline, disputes, tribunal, audit
+log)** + **Slice 7 (standings, promotion/relegation, season close)** + **Slice 8 (prize pools)**.
+The competition loop is closed: join → play → report → adjudicate → standings → payout.
+Next per the build plan: Slice 9 (cards + minting).
 
 **Auth/data topology:** Firebase Auth (Email/Password + Google) → App-Router session cookies
 (Admin SDK, Node runtime). Member/profile data lives in **Firestore** `members/{uid}` (server-side

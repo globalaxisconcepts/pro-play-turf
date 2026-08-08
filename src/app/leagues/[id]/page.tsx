@@ -81,6 +81,10 @@ export default async function LeagueDetailPage({
     seasonService.standingsFor(id),
   ]);
 
+  // Actual payouts, once the league has been settled. Read from the ledger
+  // rather than recomputed, so what's shown is what was really paid.
+  const settled = await leagueService.payoutsFor(id);
+
   const isFree = row.buyInCents === 0n;
   const open = row.status === "OPEN" || row.status === "FILLING";
   const left = spotsLeft(row);
@@ -290,8 +294,38 @@ export default async function LeagueDetailPage({
 
         {tab === "prize" && (
           <>
-            <p className="lg-panel-note">
-              Projected at full capacity ({row.capacity} players
+            {settled.length > 0 ? (
+              <>
+                <p className="lg-panel-note">
+                  Final payouts. The pool was what entrants actually paid in, so
+                  a league that didn&apos;t fill paid out less than advertised.
+                </p>
+                <table className="tx-table">
+                  <thead>
+                    <tr>
+                      <th>Place</th>
+                      <th>Player</th>
+                      <th>Won</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {settled.map((s) => (
+                      <tr
+                        key={s.userId}
+                        data-you={s.userId === session?.userId || undefined}
+                      >
+                        <td>{ordinal(s.position)}</td>
+                        <td>{s.displayName}</td>
+                        <td className="gold">{formatCents(s.amountCents)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : null}
+            <p className="lg-panel-note" style={{ marginTop: settled.length ? 28 : 0 }}>
+              {settled.length > 0 ? "Advertised split — " : ""}Projected at full
+              capacity ({row.capacity} players
               {isFree ? "" : ` × ${formatCents(row.buyInCents)}`}).
             </p>
             <table className="tx-table">
