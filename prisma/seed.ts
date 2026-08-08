@@ -1,6 +1,6 @@
 import { Bucket, type LeagueStatus, type Tier } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { DEMO_ADMIN_USER_ID, DEMO_USER_ID } from "@/server/auth";
+import { DEMO_ADMIN_USER_ID, DEMO_USER_ID } from "@/lib/demo-users";
 import { SYSTEM_USER_ID, SYSTEM_WALLET_ID } from "@/server/ledger/system";
 import { AlreadyJoinedError } from "@/server/leagues/errors";
 import { joinService, ledgerService } from "@/server/services";

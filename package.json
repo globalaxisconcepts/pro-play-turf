@@ -19,7 +19,7 @@
     "prisma:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "prisma db seed",
     "db:pglite-sql": "prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > tests/helpers/schema.sql"
   },
   "prisma": {

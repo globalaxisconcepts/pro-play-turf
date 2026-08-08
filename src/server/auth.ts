@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
+import { DEMO_USER_ID } from "@/lib/demo-users";
 import { env } from "@/lib/env";
 import { getAdminAuth, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
 import { SESSION_COOKIE } from "@/lib/firebase/session";
@@ -18,8 +19,7 @@ import { provisionUser } from "@/server/provision";
  * in production, resolve to the seeded demo player so the app stays runnable
  * offline. Setting FIREBASE_SERVICE_ACCOUNT_KEY switches on real auth.
  */
-export const DEMO_USER_ID = "demo-player-user";
-export const DEMO_ADMIN_USER_ID = "demo-admin-user";
+export { DEMO_ADMIN_USER_ID, DEMO_USER_ID } from "@/lib/demo-users";
 
 export interface Session {
   userId: string;
