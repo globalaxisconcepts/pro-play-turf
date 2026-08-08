@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { safeExternalUrl } from "@/lib/urls";
 import { reviewService } from "@/server/services";
 import { resolveMatchAction } from "./actions";
 
@@ -87,11 +88,11 @@ export default async function AdminReviewsPage() {
                             :
                           </strong>{" "}
                           {d.reason}
-                          {d.evidenceUrl && (
+                          {safeExternalUrl(d.evidenceUrl) && (
                             <>
                               {" — "}
                               <a
-                                href={d.evidenceUrl}
+                                href={safeExternalUrl(d.evidenceUrl)!}
                                 target="_blank"
                                 rel="noopener noreferrer nofollow"
                               >
@@ -111,22 +112,29 @@ export default async function AdminReviewsPage() {
                     <p className="admin-empty">Neither player submitted proof.</p>
                   ) : (
                     <ul>
-                      {m.proofs.map((p) => (
-                        <li key={p.id}>
-                          <span className="mr-proof-kind">
-                            {p.userId === m.homeUserId
-                              ? m.home.displayName
-                              : m.away.displayName}
-                          </span>
-                          <a
-                            href={p.url}
-                            target="_blank"
-                            rel="noopener noreferrer nofollow"
-                          >
-                            {p.url}
-                          </a>
-                        </li>
-                      ))}
+                      {m.proofs.map((p) => {
+                        const href = safeExternalUrl(p.url);
+                        return (
+                          <li key={p.id}>
+                            <span className="mr-proof-kind">
+                              {p.userId === m.homeUserId
+                                ? m.home.displayName
+                                : m.away.displayName}
+                            </span>
+                            {href ? (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                              >
+                                {href}
+                              </a>
+                            ) : (
+                              <span className="admin-empty">Unavailable link</span>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

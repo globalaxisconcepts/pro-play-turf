@@ -1,3 +1,4 @@
+import { isSafeHttpUrl } from "@/lib/urls";
 import { ProofUploadUnavailableError } from "./errors";
 
 export interface ProofUpload {
@@ -33,13 +34,7 @@ export class UnavailableProofStorage implements ProofStorage {
 
 /**
  * Only http(s) links are acceptable evidence. Blocks `javascript:` and `data:`
- * URLs, which would otherwise be rendered as clickable proof links.
+ * URLs, which would otherwise be rendered as clickable proof links. Shares one
+ * implementation with the render-time check so the two can't drift apart.
  */
-export function isSafeProofUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
-  } catch {
-    return false;
-  }
-}
+export const isSafeProofUrl = isSafeHttpUrl;

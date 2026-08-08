@@ -5,8 +5,10 @@ import { auth } from "@/server/auth";
 import { leagueService } from "@/server/services";
 import { spotsLeft } from "@/server/leagues/types";
 import {
+  advanceBracketAction,
   closeSeasonAction,
   createDivisionAction,
+  drawBracketAction,
   createLeagueAction,
   createSeasonAction,
   generateFixturesAction,
@@ -182,18 +184,41 @@ export default async function AdminLeaguesPage() {
                     </td>
                     <td>{l.status}</td>
                     <td>
-                      <form action={generateFixturesAction}>
-                        <input type="hidden" name="leagueId" value={l.id} />
-                        <button
-                          type="submit"
-                          className="btn btn-ghost"
-                          disabled={!ready}
-                        >
-                          {l.status === "OPEN" || l.status === "FILLING"
-                            ? "Kick off"
-                            : "Started"}
-                        </button>
-                      </form>
+                      {l.tier === "CHAMPIONS" ? (
+                        <div className="rv-actions">
+                          <form action={drawBracketAction}>
+                            <input type="hidden" name="leagueId" value={l.id} />
+                            <input
+                              type="hidden"
+                              name="seasonId"
+                              value={listing.season?.id ?? ""}
+                            />
+                            <input type="hidden" name="size" value={4} />
+                            <button type="submit" className="btn btn-ghost">
+                              Draw bracket
+                            </button>
+                          </form>
+                          <form action={advanceBracketAction}>
+                            <input type="hidden" name="leagueId" value={l.id} />
+                            <button type="submit" className="btn btn-ghost">
+                              Advance round
+                            </button>
+                          </form>
+                        </div>
+                      ) : (
+                        <form action={generateFixturesAction}>
+                          <input type="hidden" name="leagueId" value={l.id} />
+                          <button
+                            type="submit"
+                            className="btn btn-ghost"
+                            disabled={!ready}
+                          >
+                            {l.status === "OPEN" || l.status === "FILLING"
+                              ? "Kick off"
+                              : "Started"}
+                          </button>
+                        </form>
+                      )}
                     </td>
                   </tr>
                 );

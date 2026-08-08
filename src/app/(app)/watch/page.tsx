@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { isDatabaseConfigured } from "@/lib/db";
+import { safeExternalUrl } from "@/lib/urls";
 import { streamProvider, streamService } from "@/server/services";
 
 export const dynamic = "force-dynamic";
@@ -130,29 +131,38 @@ export default async function WatchPage({
           </div>
         ) : (
           <ol className="lg-fixtures">
-            {vods.map((v) => (
-              <li key={v.id}>
-                <div className="lg-fixture">
-                  <span className="lg-fixture-teams">
-                    <span>{v.match.home.displayName}</span>
-                    <span className="lg-fixture-score">vs</span>
-                    <span>{v.match.away.displayName}</span>
-                  </span>
-                  <span className="sc-league">{v.match.league.name}</span>
-                  <a
-                    href={v.url}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="btn btn-ghost"
-                  >
-                    Watch VOD
-                  </a>
-                  <Link href={`/matches/${v.match.id}`} className="rv-link">
-                    Match →
-                  </Link>
-                </div>
-              </li>
-            ))}
+            {vods.map((v) => {
+              // Re-checked at render: a stored non-http(s) URL is shown as
+              // text, never as a clickable href.
+              const href = safeExternalUrl(v.url);
+              return (
+                <li key={v.id}>
+                  <div className="lg-fixture">
+                    <span className="lg-fixture-teams">
+                      <span>{v.match.home.displayName}</span>
+                      <span className="lg-fixture-score">vs</span>
+                      <span>{v.match.away.displayName}</span>
+                    </span>
+                    <span className="sc-league">{v.match.league.name}</span>
+                    {href ? (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="btn btn-ghost"
+                      >
+                        Watch VOD
+                      </a>
+                    ) : (
+                      <span className="mr-hint">Unavailable link</span>
+                    )}
+                    <Link href={`/matches/${v.match.id}`} className="rv-link">
+                      Match →
+                    </Link>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         )}
       </section>

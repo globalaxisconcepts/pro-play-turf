@@ -8,6 +8,7 @@ import { JoinService } from "./leagues/join-service";
 import { LeagueService } from "./leagues/league-service";
 import { PrizeService } from "./leagues/prize-service";
 import { SeasonService } from "./leagues/season-service";
+import { BracketService } from "./matches/bracket-service";
 import { MatchService } from "./matches/match-service";
 import { ReviewService } from "./matches/review-service";
 import { UnavailableProofStorage } from "./matches/proof-storage";
@@ -32,6 +33,7 @@ export const cardService = new CardService(prisma, cardCustodian);
 export const marketService = new MarketService(prisma, ledgerService, cardCustodian);
 export const seasonService = new SeasonService(prisma, prizeService, cardService);
 export const matchService = new MatchService(prisma);
+export const bracketService = new BracketService(prisma);
 export const reviewService = new ReviewService(prisma);
 /** Swap for a Twitch/YouTube API implementation to switch live status on. */
 export const streamProvider = new EmbedOnlyStreamProvider();

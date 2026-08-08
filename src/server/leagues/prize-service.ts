@@ -39,7 +39,15 @@ export class PrizeService {
     private readonly ledger: LedgerService,
   ) {}
 
-  async settleLeague(leagueId: string): Promise<SettlementResult> {
+  /**
+   * @param winnersOverride ranked user ids, best first. Supplied by the
+   * Champions knockout, where placement comes from the bracket rather than a
+   * points table. Omitted for a league, which derives them from standings.
+   */
+  async settleLeague(
+    leagueId: string,
+    winnersOverride?: string[],
+  ): Promise<SettlementResult> {
     const league = await this.prisma.league.findUnique({
       where: { id: leagueId },
       select: {
@@ -90,7 +98,15 @@ export class PrizeService {
       played,
     );
 
-    const winners = table.slice(0, Math.min(PAYING_PLACES, table.length));
+    // A knockout has no points table, so its order is handed in. Only entrants
+    // can be paid — an id that never entered is ignored rather than credited.
+    const entrantIds = new Set(entries.map((e) => e.userId));
+    const ranked = winnersOverride
+      ? winnersOverride
+          .filter((id) => entrantIds.has(id))
+          .map((userId) => ({ userId }))
+      : table;
+    const winners = ranked.slice(0, Math.min(PAYING_PLACES, ranked.length));
     const breakdown = splitPool({
       poolCents,
       rakeBps: league.rakeBps,

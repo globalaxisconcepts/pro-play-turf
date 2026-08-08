@@ -9,8 +9,9 @@ internal double-entry **ledger** with test credits until a real payment gateway 
 browse + admin authoring)** + **Slice 4 (join + buy-in escrow)** + **Slice 5 (fixtures, Match
 Room, both-player result reporting)** + **Slice 6 (validator pipeline, disputes, tribunal, audit
 log)** + **Slice 7 (standings, promotion/relegation, season close)** + **Slice 8 (prize pools)**.
-The competition loop is closed: join → play → report → adjudicate → standings → payout.
-Next per the build plan: Slice 9 (cards + minting).
++ **Slice 9 (Access Passes)** + **Slice 10 (marketplace)** + **Slice 11 (streaming, /watch,
+/scores)** + **Slice 12 (Champions League knockout)**. Next per the build plan: Slice 13 (real
+payment gateway — **blocked on the legal/KYC/geo track**), then Slice 14 (hardening + launch).
 
 **Auth/data topology:** Firebase Auth (Email/Password + Google) → App-Router session cookies
 (Admin SDK, Node runtime). Member/profile data lives in **Firestore** `members/{uid}` (server-side

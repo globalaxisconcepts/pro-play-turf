@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { parseCents } from "@/lib/money";
 import { auth } from "@/server/auth";
-import { leagueService, matchService, seasonService } from "@/server/services";
+import {
+  bracketService,
+  leagueService,
+  matchService,
+  seasonService,
+} from "@/server/services";
 
 /** Server actions are directly invocable — re-check ADMIN on every one. */
 async function requireAdmin(): Promise<void> {
@@ -110,4 +115,29 @@ export async function closeSeasonAction(formData: FormData): Promise<void> {
   await seasonService.closeSeason(seasonId);
   revalidatePath("/admin/leagues");
   revalidatePath("/leagues");
+}
+
+/**
+ * Draw the Champions League: seed the top Elite finishers into a knockout.
+ * Refuses to redraw, so the bracket can't be reshuffled once play starts.
+ */
+export async function drawBracketAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const leagueId = z.string().min(1).parse(formData.get("leagueId"));
+  const seasonId = z.string().min(1).parse(formData.get("seasonId"));
+  const size = Number(formData.get("size") ?? 4);
+
+  const seeds = await bracketService.qualifiers(seasonId, size);
+  await bracketService.generateBracket(leagueId, seeds);
+  revalidatePath("/admin/leagues");
+  revalidatePath("/champions-league");
+}
+
+/** Move the knockout on if every tie in the current round is settled. */
+export async function advanceBracketAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const leagueId = z.string().min(1).parse(formData.get("leagueId"));
+  await bracketService.advance(leagueId);
+  revalidatePath("/admin/leagues");
+  revalidatePath("/champions-league");
 }

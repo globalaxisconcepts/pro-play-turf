@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isDatabaseConfigured } from "@/lib/db";
+import { safeExternalUrl } from "@/lib/urls";
 import { auth } from "@/server/auth";
 import { matchService, proofStorage } from "@/server/services";
 import { DisputeForm } from "./_components/DisputeForm";
@@ -177,16 +178,23 @@ export default async function MatchRoomPage({
           <p className="mr-hint">No proof submitted yet.</p>
         ) : (
           <ul className="mr-proofs">
-            {match.proofs.map((p) => (
-              <li key={p.id}>
-                <span className="mr-proof-kind">
-                  {p.kind === "STREAM_URL" ? "Stream" : "Screenshot"}
-                </span>
-                <a href={p.url} target="_blank" rel="noopener noreferrer nofollow">
-                  {p.url}
-                </a>
-              </li>
-            ))}
+            {match.proofs.map((p) => {
+              const href = safeExternalUrl(p.url);
+              return (
+                <li key={p.id}>
+                  <span className="mr-proof-kind">
+                    {p.kind === "STREAM_URL" ? "Stream" : "Screenshot"}
+                  </span>
+                  {href ? (
+                    <a href={href} target="_blank" rel="noopener noreferrer nofollow">
+                      {href}
+                    </a>
+                  ) : (
+                    <span className="mr-hint">Unavailable link</span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
