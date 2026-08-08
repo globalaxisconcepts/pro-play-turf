@@ -14,7 +14,11 @@ import {
   NoWalletError,
   RefundNotAllowedError,
 } from "@/server/leagues/errors";
-import { joinService } from "@/server/services";
+import {
+  ActionBlockedError,
+  RateLimitedError,
+} from "@/server/compliance/compliance-service";
+import { complianceService, joinService } from "@/server/services";
 
 /**
  * `needsFunds` drives the insufficient-balance → Deposit branch in the confirm
@@ -41,6 +45,7 @@ export async function joinLeagueAction(
 
   const { userId } = await auth();
   try {
+    await complianceService.guard(userId, "leagueEntry");
     await joinService.joinLeague({ leagueId: parsed.data.leagueId, userId });
   } catch (err) {
     return toJoinState(err);
@@ -64,6 +69,7 @@ export async function leaveLeagueAction(
 
   const { userId } = await auth();
   try {
+    await complianceService.guard(userId, "leagueEntry");
     await joinService.refundEntry({ leagueId: parsed.data.leagueId, userId });
   } catch (err) {
     return toJoinState(err);
@@ -79,6 +85,9 @@ const unavailable =
 
 /** Map service errors onto copy a player can act on. Never leak internals. */
 function toJoinState(err: unknown): JoinState {
+  if (err instanceof ActionBlockedError || err instanceof RateLimitedError) {
+    return { ok: false, error: err.message };
+  }
   if (err instanceof InsufficientFundsError) {
     return {
       ok: false,

@@ -53,6 +53,20 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "UserCompliance" (
+    "userId" TEXT NOT NULL,
+    "dateOfBirth" TIMESTAMP(3),
+    "termsAcceptedAt" TIMESTAMP(3),
+    "termsVersion" TEXT,
+    "restrictedAt" TIMESTAMP(3),
+    "restrictedReason" TEXT,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "UserCompliance_pkey" PRIMARY KEY ("userId")
+);
+
+-- CreateTable
 CREATE TABLE "Wallet" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -415,6 +429,9 @@ CREATE INDEX "LeagueEntry_userId_idx" ON "LeagueEntry"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "LeagueEntry_leagueId_userId_key" ON "LeagueEntry"("leagueId", "userId");
+
+-- AddForeignKey
+ALTER TABLE "UserCompliance" ADD CONSTRAINT "UserCompliance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

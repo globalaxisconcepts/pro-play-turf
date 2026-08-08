@@ -161,10 +161,10 @@ export default function HomePage() {
               <div className="feat">
                 <div className="fic">⚡</div>
                 <div>
-                  <h3>Instant Withdrawals</h3>
+                  <h3>Instant Settlement</h3>
                   <p>
-                    Cash out winnings the moment a match is verified. No waiting
-                    periods.
+                    Winnings land in your balance the moment a league settles.
+                    Cash withdrawals arrive with our payments launch.
                   </p>
                 </div>
               </div>
@@ -227,7 +227,7 @@ export default function HomePage() {
                 $15,000
               </div>
               <div style={{ color: "var(--t2)", fontSize: 14 }}>
-                Season prize pool · Elite Tier · Top 4 qualify
+                Target prize pool · Elite Tier · Top 4 qualify
               </div>
               <Link
                 href="/#leagues"

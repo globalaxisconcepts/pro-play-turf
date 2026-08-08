@@ -8,10 +8,18 @@ internal double-entry **ledger** with test credits until a real payment gateway 
 (Firebase auth + Firestore member profiles)** + **Slice 3 (seasons/divisions/leagues + public
 browse + admin authoring)** + **Slice 4 (join + buy-in escrow)** + **Slice 5 (fixtures, Match
 Room, both-player result reporting)** + **Slice 6 (validator pipeline, disputes, tribunal, audit
-log)** + **Slice 7 (standings, promotion/relegation, season close)** + **Slice 8 (prize pools)**.
-+ **Slice 9 (Access Passes)** + **Slice 10 (marketplace)** + **Slice 11 (streaming, /watch,
-/scores)** + **Slice 12 (Champions League knockout)**. Next per the build plan: Slice 13 (real
-payment gateway — **blocked on the legal/KYC/geo track**), then Slice 14 (hardening + launch).
+log)** + **Slice 7 (standings, promotion/relegation, season close)** + **Slice 8 (prize pools)**
++ **Slice 9 (Access Passes)** + **Slice 10 (marketplace)** + **Slice 11 (streaming, `/watch`,
+`/scores`)** + **Slice 12 (Champions League knockout)** + **Slice 14 (hardening + launch gates)**.
+Remaining: **Slice 13 (real payment gateway)**, which is **blocked on the legal/KYC/geo track**.
+See [`docs/LAUNCH-CHECKLIST.md`](docs/LAUNCH-CHECKLIST.md) for what is and isn't ready.
+
+**Launch gates (Slice 14):** test-credit deposits mint money with no payment taken, so they are
+OFF unless `ENABLE_TEST_CREDIT_DEPOSITS=1` — never set it anywhere real people can reach. Age and
+terms are checked **server-side on every money action** through `ComplianceService.guard`, which
+also applies the rate limit: one call, so a new action can't check one and forget the other.
+`reconcileLedger` runs nightly and **throws** on drift rather than repairing it — a rewritten
+balance would destroy the evidence of what went wrong.
 
 **Auth/data topology:** Firebase Auth (Email/Password + Google) → App-Router session cookies
 (Admin SDK, Node runtime). Member/profile data lives in **Firestore** `members/{uid}` (server-side

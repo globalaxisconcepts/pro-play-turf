@@ -11,7 +11,11 @@ import {
   MatchNotFoundError,
   NotAPlayerError,
 } from "@/server/matches/errors";
-import { matchService, reviewService } from "@/server/services";
+import {
+  ActionBlockedError,
+  RateLimitedError,
+} from "@/server/compliance/compliance-service";
+import { complianceService, matchService, reviewService } from "@/server/services";
 
 export type ReportState = {
   ok: boolean;
@@ -62,6 +66,7 @@ export async function reportResultAction(
   const { matchId, homeScore, awayScore, proofUrl } = parsed.data;
 
   try {
+    await complianceService.guard(userId, "matchReport");
     const { status } = await matchService.submitResult({
       matchId,
       userId,
@@ -72,6 +77,9 @@ export async function reportResultAction(
     revalidatePath(`/matches/${matchId}`);
     return { ok: true, status };
   } catch (err) {
+    if (err instanceof ActionBlockedError || err instanceof RateLimitedError) {
+      return { ok: false, error: err.message };
+    }
     if (err instanceof AlreadySubmittedError) {
       return { ok: false, error: "You've already reported this match." };
     }
@@ -119,6 +127,7 @@ export async function raiseDisputeAction(
 
   const { userId } = await auth();
   try {
+    await complianceService.guard(userId, "matchReport");
     await reviewService.raiseDispute({
       matchId: parsed.data.matchId,
       userId,
@@ -128,6 +137,9 @@ export async function raiseDisputeAction(
     revalidatePath(`/matches/${parsed.data.matchId}`);
     return { ok: true, status: "DISPUTED" };
   } catch (err) {
+    if (err instanceof ActionBlockedError || err instanceof RateLimitedError) {
+      return { ok: false, error: err.message };
+    }
     if (err instanceof DisputeExistsError) {
       return { ok: false, error: "You've already disputed this match." };
     }

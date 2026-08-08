@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { walletLock } from "@/lib/lock";
+import { rateLimiter } from "@/lib/rate-limit";
 import { CardService } from "./cards/card-service";
+import { ComplianceService } from "./compliance/compliance-service";
 import { InternalCardCustodian } from "./cards/custodian";
 import { MarketService } from "./cards/market-service";
 import { LedgerService } from "./ledger/ledger-service";
@@ -25,6 +27,7 @@ import { WalletService } from "./wallet/wallet-service";
 export const ledgerService = new LedgerService(prisma, walletLock());
 export const paymentProvider = new StubPaymentProvider(prisma, ledgerService);
 export const walletService = new WalletService(prisma);
+export const complianceService = new ComplianceService(prisma, rateLimiter());
 export const leagueService = new LeagueService(prisma);
 export const joinService = new JoinService(prisma, ledgerService);
 export const prizeService = new PrizeService(prisma, ledgerService);

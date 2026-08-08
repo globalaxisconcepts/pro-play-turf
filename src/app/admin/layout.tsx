@@ -24,6 +24,7 @@ export default async function AdminLayout({
         <nav className="admin-nav">
           {role === "ADMIN" && <Link href="/admin/leagues">Leagues</Link>}
           <Link href="/admin/reviews">Reviews</Link>
+          {role === "ADMIN" && <Link href="/admin/integrity">Integrity</Link>}
           <Link href="/leagues">View site →</Link>
         </nav>
       </header>

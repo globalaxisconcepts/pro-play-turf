@@ -16,6 +16,16 @@ const schema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   /** Which wallet-lock implementation the ledger uses. */
   LEDGER_LOCK_DRIVER: z.enum(["memory", "redis"]).default("memory"),
+  /** Rate-limit backend. "memory" counts per instance; "redis" is global. */
+  RATE_LIMIT_DRIVER: z.enum(["memory", "redis"]).default("memory"),
+  /**
+   * Deposits mint test credits with no payment taken, so this must stay unset
+   * anywhere real people can reach. Slice 13 replaces the stub with a real
+   * gateway; until then "1" is the only thing that switches deposits on.
+   */
+  ENABLE_TEST_CREDIT_DEPOSITS: z.string().optional(),
+  /** Minimum age to hold an account. Enforced at signup and on money actions. */
+  MIN_AGE_YEARS: z.coerce.number().int().min(13).max(25).default(18),
   /**
    * Base64 (or raw JSON) of the Firebase Admin service-account key. Optional:
    * when unset in dev, auth() falls back to the seeded demo player. The public

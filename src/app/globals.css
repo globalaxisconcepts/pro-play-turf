@@ -2567,6 +2567,34 @@ h3 {
   }
 }
 
+/* Admin integrity dashboard */
+.int-ok,
+.int-bad {
+  margin-top: 24px;
+  padding: 22px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+}
+.int-bad {
+  border-color: rgba(255, 77, 77, 0.45);
+  background: rgba(255, 77, 77, 0.08);
+}
+.int-ok h2,
+.int-bad h2 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+.int-ok p,
+.int-bad p {
+  color: var(--t2);
+  font-size: 14px;
+}
+.int-warn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
 /* Review queue (tribunal) */
 .rv-queue {
   display: flex;

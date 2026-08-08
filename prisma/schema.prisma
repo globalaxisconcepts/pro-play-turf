@@ -47,7 +47,29 @@ model User {
   cards       CardInstance[]
   listings    CardListing[]     @relation("Listings")
   stream      StreamLink?
+  compliance  UserCompliance?
   createdAt   DateTime          @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Slice 14 — launch gates. Age and terms acceptance are recorded per user and
+// checked before any money moves, so the record of consent is as durable as
+// the money it gates.
+// ---------------------------------------------------------------------------
+
+model UserCompliance {
+  userId           String    @id
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Date of birth as given at signup. Null means never confirmed.
+  dateOfBirth      DateTime?
+  termsAcceptedAt  DateTime?
+  /// The terms version consented to, so a future revision can re-prompt.
+  termsVersion     String?
+  /// Set by an admin to stop an account transacting, with a stated reason.
+  restrictedAt     DateTime?
+  restrictedReason String?
+  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
 }
 
 model Wallet {

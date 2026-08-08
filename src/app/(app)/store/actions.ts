@@ -12,7 +12,11 @@ import {
   SelfPurchaseError,
 } from "@/server/cards/errors";
 import { InsufficientFundsError } from "@/server/ledger/errors";
-import { cardService, marketService } from "@/server/services";
+import {
+  ActionBlockedError,
+  RateLimitedError,
+} from "@/server/compliance/compliance-service";
+import { cardService, complianceService, marketService } from "@/server/services";
 
 export type StoreState = {
   ok: boolean;
@@ -52,6 +56,9 @@ export async function surrenderPassAction(
         : "Pass surrendered. You're already in the top division, so there was no promotion to apply.",
     };
   } catch (err) {
+    if (err instanceof ActionBlockedError || err instanceof RateLimitedError) {
+      return { ok: false, error: err.message };
+    }
     if (err instanceof CardNotOwnedError) {
       return { ok: false, error: "That Pass isn't yours." };
     }
@@ -95,6 +102,7 @@ export async function listPassAction(
 
   const { userId } = await auth();
   try {
+    await complianceService.guard(userId, "market");
     await marketService.list({
       instanceId: parsed.data.instanceId,
       sellerId: userId,
@@ -103,6 +111,9 @@ export async function listPassAction(
     revalidatePath("/store");
     return { ok: true, message: "Listed on the marketplace." };
   } catch (err) {
+    if (err instanceof ActionBlockedError || err instanceof RateLimitedError) {
+      return { ok: false, error: err.message };
+    }
     if (err instanceof CardNotOwnedError) {
       return { ok: false, error: "That Pass isn't yours." };
     }
@@ -124,10 +135,14 @@ export async function cancelListingAction(
 
   const { userId } = await auth();
   try {
+    await complianceService.guard(userId, "market");
     await marketService.cancel({ listingId, sellerId: userId });
     revalidatePath("/store");
     return { ok: true, message: "Listing cancelled." };
   } catch (err) {
+    if (err instanceof ActionBlockedError || err instanceof RateLimitedError) {
+      return { ok: false, error: err.message };
+    }
     if (err instanceof ListingNotAvailableError) {
       return { ok: false, error: "That listing is already closed." };
     }
@@ -152,11 +167,15 @@ export async function buyPassAction(
 
   const { userId } = await auth();
   try {
+    await complianceService.guard(userId, "market");
     await marketService.buy({ listingId, buyerId: userId });
     revalidatePath("/store");
     revalidatePath("/wallet");
     return { ok: true, message: "Bought. The Pass is in your collection." };
   } catch (err) {
+    if (err instanceof ActionBlockedError || err instanceof RateLimitedError) {
+      return { ok: false, error: err.message };
+    }
     if (err instanceof InsufficientFundsError) {
       return {
         ok: false,
