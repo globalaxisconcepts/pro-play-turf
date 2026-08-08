@@ -23,6 +23,9 @@ CREATE TYPE "StandingOutcome" AS ENUM ('PROMOTED', 'RELEGATED', 'STAYED');
 CREATE TYPE "CardStatus" AS ENUM ('OWNED', 'LISTED', 'SURRENDERED');
 
 -- CreateEnum
+CREATE TYPE "ListingStatus" AS ENUM ('ACTIVE', 'SOLD', 'CANCELLED');
+
+-- CreateEnum
 CREATE TYPE "EntryStatus" AS ENUM ('ACTIVE', 'REFUNDED');
 
 -- CreateEnum
@@ -141,6 +144,34 @@ CREATE TABLE "CardInstance" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "CardInstance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CardListing" (
+    "id" TEXT NOT NULL,
+    "cardInstanceId" TEXT NOT NULL,
+    "sellerUserId" TEXT NOT NULL,
+    "priceCents" BIGINT NOT NULL,
+    "status" "ListingStatus" NOT NULL DEFAULT 'ACTIVE',
+    "buyerUserId" TEXT,
+    "soldAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CardListing_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CardTxn" (
+    "id" TEXT NOT NULL,
+    "cardInstanceId" TEXT NOT NULL,
+    "fromUserId" TEXT,
+    "toUserId" TEXT NOT NULL,
+    "priceCents" BIGINT NOT NULL DEFAULT 0,
+    "feeCents" BIGINT NOT NULL DEFAULT 0,
+    "ledgerTxnId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CardTxn_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -296,6 +327,18 @@ CREATE UNIQUE INDEX "CardInstance_cardTypeId_serial_key" ON "CardInstance"("card
 CREATE UNIQUE INDEX "CardInstance_mintedForLeagueId_ownerUserId_key" ON "CardInstance"("mintedForLeagueId", "ownerUserId");
 
 -- CreateIndex
+CREATE INDEX "CardListing_status_idx" ON "CardListing"("status");
+
+-- CreateIndex
+CREATE INDEX "CardListing_cardInstanceId_idx" ON "CardListing"("cardInstanceId");
+
+-- CreateIndex
+CREATE INDEX "CardListing_sellerUserId_idx" ON "CardListing"("sellerUserId");
+
+-- CreateIndex
+CREATE INDEX "CardTxn_cardInstanceId_idx" ON "CardTxn"("cardInstanceId");
+
+-- CreateIndex
 CREATE INDEX "Division_seasonId_idx" ON "Division"("seasonId");
 
 -- CreateIndex
@@ -369,6 +412,15 @@ ALTER TABLE "CardInstance" ADD CONSTRAINT "CardInstance_cardTypeId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "CardInstance" ADD CONSTRAINT "CardInstance_ownerUserId_fkey" FOREIGN KEY ("ownerUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardListing" ADD CONSTRAINT "CardListing_cardInstanceId_fkey" FOREIGN KEY ("cardInstanceId") REFERENCES "CardInstance"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardListing" ADD CONSTRAINT "CardListing_sellerUserId_fkey" FOREIGN KEY ("sellerUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CardTxn" ADD CONSTRAINT "CardTxn_cardInstanceId_fkey" FOREIGN KEY ("cardInstanceId") REFERENCES "CardInstance"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Division" ADD CONSTRAINT "Division_seasonId_fkey" FOREIGN KEY ("seasonId") REFERENCES "Season"("id") ON DELETE CASCADE ON UPDATE CASCADE;

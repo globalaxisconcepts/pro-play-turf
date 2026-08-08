@@ -37,3 +37,19 @@ export class NoCardTypeError extends Error {
     this.name = "NoCardTypeError";
   }
 }
+
+/** The listing is gone — sold, cancelled, or never active. */
+export class ListingNotAvailableError extends Error {
+  constructor(listingId: string) {
+    super(`Listing ${listingId} is no longer available.`);
+    this.name = "ListingNotAvailableError";
+  }
+}
+
+/** You can't buy your own Pass. */
+export class SelfPurchaseError extends Error {
+  constructor() {
+    super("You can't buy your own Pass.");
+    this.name = "SelfPurchaseError";
+  }
+}

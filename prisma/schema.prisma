@@ -45,6 +45,7 @@ model User {
   disputes    MatchDispute[]    @relation("DisputesRaised")
   standings   Standing[]
   cards       CardInstance[]
+  listings    CardListing[]     @relation("Listings")
   createdAt   DateTime          @default(now())
 }
 
@@ -196,24 +197,73 @@ model CardType {
 }
 
 model CardInstance {
-  id                String     @id @default(cuid())
+  id                String        @id @default(cuid())
   cardTypeId        String
-  cardType          CardType   @relation(fields: [cardTypeId], references: [id], onDelete: Cascade)
+  cardType          CardType      @relation(fields: [cardTypeId], references: [id], onDelete: Cascade)
   ownerUserId       String
-  owner             User       @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  owner             User          @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
   /// 1-based within its type; the collectible's identity.
   serial            Int
-  status            CardStatus @default(OWNED)
+  status            CardStatus    @default(OWNED)
   // Provenance — where this Pass came from.
   mintedForLeagueId String?
   mintedPosition    Int?
   surrenderedAt     DateTime?
-  createdAt         DateTime   @default(now())
+  createdAt         DateTime      @default(now())
+  listings          CardListing[]
+  txns              CardTxn[]
 
   @@unique([cardTypeId, serial])
   // One Pass per player per league: makes mint-on-placement idempotent.
   @@unique([mintedForLeagueId, ownerUserId])
   @@index([ownerUserId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Slice 10 — the marketplace. Money moves through LedgerService like every
+// other flow; CardTxn is the ownership trail, not an accounting record.
+// ---------------------------------------------------------------------------
+
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELLED
+}
+
+model CardListing {
+  id             String        @id @default(cuid())
+  cardInstanceId String
+  cardInstance   CardInstance  @relation(fields: [cardInstanceId], references: [id], onDelete: Cascade)
+  sellerUserId   String
+  seller         User          @relation("Listings", fields: [sellerUserId], references: [id], onDelete: Cascade)
+  priceCents     BigInt
+  status         ListingStatus @default(ACTIVE)
+  buyerUserId    String?
+  soldAt         DateTime?
+  createdAt      DateTime      @default(now())
+
+  @@index([status])
+  @@index([cardInstanceId])
+  @@index([sellerUserId])
+}
+
+/**
+ * Provenance: every hand a Pass has passed through, and at what price.
+ */
+model CardTxn {
+  id             String       @id @default(cuid())
+  cardInstanceId String
+  cardInstance   CardInstance @relation(fields: [cardInstanceId], references: [id], onDelete: Cascade)
+  /// null when the Pass was minted rather than bought.
+  fromUserId     String?
+  toUserId       String
+  priceCents     BigInt       @default(0)
+  feeCents       BigInt       @default(0)
+  /// The LedgerTransaction that moved the money, when money moved.
+  ledgerTxnId    String?
+  createdAt      DateTime     @default(now())
+
+  @@index([cardInstanceId])
 }
 
 model Division {
