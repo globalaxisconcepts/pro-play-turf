@@ -25,6 +25,9 @@ CREATE TYPE "MatchStatus" AS ENUM ('SCHEDULED', 'LIVE', 'AWAITING', 'VERIFIED', 
 -- CreateEnum
 CREATE TYPE "ProofKind" AS ENUM ('SCREENSHOT', 'STREAM_URL');
 
+-- CreateEnum
+CREATE TYPE "DisputeStatus" AS ENUM ('OPEN', 'UPHELD', 'REJECTED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -153,6 +156,35 @@ CREATE TABLE "MatchProof" (
 );
 
 -- CreateTable
+CREATE TABLE "MatchDispute" (
+    "id" TEXT NOT NULL,
+    "matchId" TEXT NOT NULL,
+    "raisedByUserId" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "evidenceUrl" TEXT,
+    "status" "DisputeStatus" NOT NULL DEFAULT 'OPEN',
+    "resolvedByUserId" TEXT,
+    "resolutionNote" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "resolvedAt" TIMESTAMP(3),
+
+    CONSTRAINT "MatchDispute_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AuditLog" (
+    "id" TEXT NOT NULL,
+    "actorUserId" TEXT,
+    "action" TEXT NOT NULL,
+    "entityType" TEXT NOT NULL,
+    "entityId" TEXT NOT NULL,
+    "detail" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AuditLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "LeagueEntry" (
     "id" TEXT NOT NULL,
     "leagueId" TEXT NOT NULL,
@@ -214,6 +246,21 @@ CREATE UNIQUE INDEX "MatchSubmission_matchId_userId_key" ON "MatchSubmission"("m
 CREATE INDEX "MatchProof_matchId_idx" ON "MatchProof"("matchId");
 
 -- CreateIndex
+CREATE INDEX "MatchDispute_status_idx" ON "MatchDispute"("status");
+
+-- CreateIndex
+CREATE INDEX "MatchDispute_matchId_idx" ON "MatchDispute"("matchId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "MatchDispute_matchId_raisedByUserId_key" ON "MatchDispute"("matchId", "raisedByUserId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_entityType_entityId_idx" ON "AuditLog"("entityType", "entityId");
+
+-- CreateIndex
+CREATE INDEX "AuditLog_createdAt_idx" ON "AuditLog"("createdAt");
+
+-- CreateIndex
 CREATE INDEX "LeagueEntry_leagueId_status_idx" ON "LeagueEntry"("leagueId", "status");
 
 -- CreateIndex
@@ -257,6 +304,12 @@ ALTER TABLE "MatchProof" ADD CONSTRAINT "MatchProof_matchId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "MatchProof" ADD CONSTRAINT "MatchProof_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchDispute" ADD CONSTRAINT "MatchDispute_matchId_fkey" FOREIGN KEY ("matchId") REFERENCES "Match"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MatchDispute" ADD CONSTRAINT "MatchDispute_raisedByUserId_fkey" FOREIGN KEY ("raisedByUserId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LeagueEntry" ADD CONSTRAINT "LeagueEntry_leagueId_fkey" FOREIGN KEY ("leagueId") REFERENCES "League"("id") ON DELETE CASCADE ON UPDATE CASCADE;

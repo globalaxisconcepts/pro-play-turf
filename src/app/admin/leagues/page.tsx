@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { TIER_LABEL, TIER_ORDER } from "@/lib/leagues";
+import { auth } from "@/server/auth";
 import { leagueService } from "@/server/services";
 import { spotsLeft } from "@/server/leagues/types";
 import {
@@ -13,6 +15,10 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Admin · Leagues" };
 
 export default async function AdminLeaguesPage() {
+  // The shell admits REVIEWERs for the tribunal; authoring is ADMIN-only.
+  const { role } = await auth();
+  if (role !== "ADMIN") notFound();
+
   const [seasons, listing] = await Promise.all([
     leagueService.listSeasonsWithDivisions(),
     leagueService.listCurrentSeasonLeagues(),

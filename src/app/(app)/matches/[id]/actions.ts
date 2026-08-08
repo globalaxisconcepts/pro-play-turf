@@ -6,11 +6,12 @@ import { isDatabaseConfigured } from "@/lib/db";
 import { auth } from "@/server/auth";
 import {
   AlreadySubmittedError,
+  DisputeExistsError,
   MatchClosedError,
   MatchNotFoundError,
   NotAPlayerError,
 } from "@/server/matches/errors";
-import { matchService } from "@/server/services";
+import { matchService, reviewService } from "@/server/services";
 
 export type ReportState = {
   ok: boolean;
@@ -84,6 +85,59 @@ export async function reportResultAction(
       return { ok: false, error: "That match no longer exists." };
     }
     console.error("[matches] report failed:", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+const disputeSchema = z.object({
+  matchId: z.string().min(1),
+  reason: z.string().trim().min(10, "Explain what went wrong (10+ characters).").max(500),
+  evidenceUrl: z
+    .string()
+    .trim()
+    .url()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+});
+
+/** Formally contest a result. Sends the match to the tribunal. */
+export async function raiseDisputeAction(
+  _prev: ReportState,
+  formData: FormData,
+): Promise<ReportState> {
+  if (!isDatabaseConfigured()) {
+    return { ok: false, error: "Disputes are unavailable right now." };
+  }
+  const parsed = disputeSchema.safeParse({
+    matchId: formData.get("matchId"),
+    reason: formData.get("reason"),
+    evidenceUrl: formData.get("evidenceUrl") ?? undefined,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid dispute." };
+  }
+
+  const { userId } = await auth();
+  try {
+    await reviewService.raiseDispute({
+      matchId: parsed.data.matchId,
+      userId,
+      reason: parsed.data.reason,
+      evidenceUrl: parsed.data.evidenceUrl,
+    });
+    revalidatePath(`/matches/${parsed.data.matchId}`);
+    return { ok: true, status: "DISPUTED" };
+  } catch (err) {
+    if (err instanceof DisputeExistsError) {
+      return { ok: false, error: "You've already disputed this match." };
+    }
+    if (err instanceof NotAPlayerError) {
+      return { ok: false, error: "Only the two players can dispute this match." };
+    }
+    if (err instanceof MatchClosedError) {
+      return { ok: false, error: "This match can't be disputed." };
+    }
+    console.error("[matches] dispute failed:", err);
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 }

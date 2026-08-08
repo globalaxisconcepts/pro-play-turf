@@ -14,6 +14,7 @@ import {
 } from "./errors";
 import { isSafeProofUrl } from "./proof-storage";
 import { generateSchedule } from "./schedule";
+import { DEFAULT_VALIDATORS, runValidators } from "./validation";
 
 export interface SubmitResultInput {
   matchId: string;
@@ -110,16 +111,14 @@ export class MatchService {
       throw new AlreadySubmittedError(matchId);
     }
 
-    const opponent = match.submissions[0];
-    const agreed =
-      opponent &&
-      opponent.homeScore === homeScore &&
-      opponent.awayScore === awayScore;
-    const next: MatchStatus = !opponent
-      ? "AWAITING"
-      : agreed
-        ? "VERIFIED"
-        : "UNDER_REVIEW";
+    // Run the adjudication chain over this report plus whatever is already on
+    // record. PENDING means "not enough evidence yet" — that's AWAITING to a
+    // player. Automated validators slot into this chain without changing here.
+    const outcome = runValidators(DEFAULT_VALIDATORS, {
+      submissions: [...match.submissions, { userId, homeScore, awayScore }],
+    });
+    const next: MatchStatus =
+      outcome.kind === "PENDING" ? "AWAITING" : outcome.kind;
 
     await this.prisma.$transaction(async (tx) => {
       try {
@@ -147,9 +146,13 @@ export class MatchService {
         where: { id: matchId },
         data: {
           status: next,
-          // A score is recorded ONLY when both reports agree.
-          ...(next === "VERIFIED"
-            ? { homeScore, awayScore, verifiedAt: new Date() }
+          // A score is recorded ONLY when the chain verifies it.
+          ...(outcome.kind === "VERIFIED"
+            ? {
+                homeScore: outcome.homeScore,
+                awayScore: outcome.awayScore,
+                verifiedAt: new Date(),
+              }
             : {}),
         },
       });

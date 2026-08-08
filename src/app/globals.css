@@ -2346,6 +2346,92 @@ h3 {
   flex: none;
 }
 
+/* Review queue (tribunal) */
+.rv-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+.rv-case {
+  padding: 22px;
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+.rv-case-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.rv-case-head h2 {
+  font-size: 19px;
+  margin-top: 6px;
+}
+.rv-case h3 {
+  font-size: 13px;
+  font-family: var(--tech);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t3);
+  margin: 20px 0 8px;
+}
+.rv-disputes ul,
+.rv-proofs ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  font-size: 13px;
+  color: var(--t2);
+  line-height: 1.6;
+}
+.rv-disputes a,
+.rv-proofs a {
+  color: var(--accent);
+  word-break: break-all;
+}
+.rv-decide {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rv-score-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.rv-decide input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  margin-top: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--t1);
+  font-size: 14px;
+}
+.rv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.rv-link {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--t2);
+}
+.rv-link:hover {
+  color: var(--t1);
+}
+
 /* Admin console */
 .admin-shell {
   min-height: 100vh;

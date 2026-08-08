@@ -42,6 +42,7 @@ model User {
   awayMatches Match[]           @relation("AwayMatches")
   submissions MatchSubmission[]
   proofs      MatchProof[]
+  disputes    MatchDispute[]    @relation("DisputesRaised")
   createdAt   DateTime          @default(now())
 }
 
@@ -203,6 +204,7 @@ model Match {
   createdAt   DateTime          @default(now())
   submissions MatchSubmission[]
   proofs      MatchProof[]
+  disputes    MatchDispute[]
 
   // One fixture per ordered pair per league.
   @@unique([leagueId, homeUserId, awayUserId])
@@ -241,6 +243,57 @@ model MatchProof {
   createdAt DateTime  @default(now())
 
   @@index([matchId])
+}
+
+// ---------------------------------------------------------------------------
+// Slice 6 — adjudication. Disagreements go to humans, and every decision that
+// changes a result is written to an append-only AuditLog. Nothing here deletes
+// evidence: a voided match keeps its reports and proofs.
+// ---------------------------------------------------------------------------
+
+enum DisputeStatus {
+  OPEN // waiting on a reviewer
+  UPHELD // the complaint was accepted; the result changed
+  REJECTED // the complaint was dismissed; the result stands
+}
+
+model MatchDispute {
+  id               String        @id @default(cuid())
+  matchId          String
+  match            Match         @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  raisedByUserId   String
+  raisedBy         User          @relation("DisputesRaised", fields: [raisedByUserId], references: [id], onDelete: Cascade)
+  reason           String
+  evidenceUrl      String?
+  status           DisputeStatus @default(OPEN)
+  resolvedByUserId String?
+  resolutionNote   String?
+  createdAt        DateTime      @default(now())
+  resolvedAt       DateTime?
+
+  // One live complaint per player per match.
+  @@unique([matchId, raisedByUserId])
+  @@index([status])
+  @@index([matchId])
+}
+
+/**
+ * Append-only record of every consequential action. Never updated, never
+ * deleted — it is the answer to "who changed this result, and why".
+ */
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String? // null when the system acted
+  action      String // MATCH_VERIFIED | MATCH_VOIDED | DISPUTE_RAISED | ...
+  entityType  String // "match" | "dispute" | "league" | ...
+  entityId    String
+  // Human-readable summary. Deliberately a string, not JSON: money is BigInt
+  // and would not survive JSON serialisation intact.
+  detail      String?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
 
 model LeagueEntry {

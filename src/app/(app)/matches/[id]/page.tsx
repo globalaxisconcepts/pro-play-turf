@@ -4,10 +4,14 @@ import { notFound } from "next/navigation";
 import { isDatabaseConfigured } from "@/lib/db";
 import { auth } from "@/server/auth";
 import { matchService, proofStorage } from "@/server/services";
+import { DisputeForm } from "./_components/DisputeForm";
 import { ReportForm } from "./_components/ReportForm";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Match Room" };
+
+/** A result can only be contested once it exists in some form. */
+const DISPUTABLE_STATES = ["VERIFIED", "UNDER_REVIEW", "DISPUTED", "AWAITING"];
 
 /** Player-facing copy for each state, and what happens next. */
 const STATE_COPY: Record<string, { label: string; next: string }> = {
@@ -186,6 +190,20 @@ export default async function MatchRoomPage({
           </ul>
         )}
       </section>
+
+      {isPlayer && DISPUTABLE_STATES.includes(match.status) && (
+        <section className="mr-panel">
+          <h2>Something wrong?</h2>
+          <p className="mr-hint">
+            If the result doesn&apos;t reflect what happened — a disconnect, a
+            rule breach, a mis-reported score — file a dispute and a reviewer
+            will decide using the evidence.
+          </p>
+          <div style={{ marginTop: 14 }}>
+            <DisputeForm matchId={match.id} />
+          </div>
+        </section>
+      )}
 
       {!isPlayer && (
         <p className="mr-hint">

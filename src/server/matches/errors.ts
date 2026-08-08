@@ -53,3 +53,19 @@ export class ProofUploadUnavailableError extends Error {
     this.name = "ProofUploadUnavailableError";
   }
 }
+
+/** Nothing to adjudicate — the match isn't in review or dispute. */
+export class NotUnderReviewError extends Error {
+  constructor(matchId: string) {
+    super(`Match ${matchId} is not awaiting review.`);
+    this.name = "NotUnderReviewError";
+  }
+}
+
+/** This player already has an open complaint on this match. */
+export class DisputeExistsError extends Error {
+  constructor(matchId: string) {
+    super(`You already raised a dispute on match ${matchId}.`);
+    this.name = "DisputeExistsError";
+  }
+}
