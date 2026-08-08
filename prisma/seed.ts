@@ -1,6 +1,6 @@
-import { Bucket } from "@prisma/client";
+import { Bucket, type LeagueStatus, type Tier } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { DEMO_USER_ID } from "@/server/auth";
+import { DEMO_ADMIN_USER_ID, DEMO_USER_ID } from "@/server/auth";
 import { SYSTEM_USER_ID, SYSTEM_WALLET_ID } from "@/server/ledger/system";
 import { ledgerService } from "@/server/services";
 
@@ -63,6 +63,24 @@ async function main() {
     create: { userId: "rookie-user" },
   });
 
+  // --- Admin (owns /admin; reachable offline via DEV_SESSION_USER_ID) ---
+  // `update` heals the role if the row already exists as a PLAYER.
+  await prisma.user.upsert({
+    where: { id: DEMO_ADMIN_USER_ID },
+    update: { role: "ADMIN" },
+    create: {
+      id: DEMO_ADMIN_USER_ID,
+      email: "admin@proplayturf.com",
+      displayName: "Admin",
+      role: "ADMIN",
+    },
+  });
+  await prisma.wallet.upsert({
+    where: { userId: DEMO_ADMIN_USER_ID },
+    update: {},
+    create: { userId: DEMO_ADMIN_USER_ID },
+  });
+
   // --- Demo history via the ledger (fixed ids => idempotent) ---
   await ledgerService.post({
     txnId: "seed-deposit-1",
@@ -95,8 +113,74 @@ async function main() {
     ],
   });
 
+  // --- Slice 3: current season + divisions + leagues ---
+  await seedLeagues();
+
   await reconcile();
   console.log("✓ Seed complete. Ledger reconciled; cached balances == ledger sums.");
+}
+
+/**
+ * Seeds an ACTIVE "Season 2" with the full division ladder and a spread of
+ * leagues across tiers, buy-ins, and statuses so the browse + filters have
+ * believable data. Idempotent: fixed ids + `update: {}` make re-seeding a no-op.
+ * No money is created here — entries/escrow arrive with Slice 4.
+ */
+async function seedLeagues() {
+  const seasonId = "season-2";
+  await prisma.season.upsert({
+    where: { id: seasonId },
+    update: {},
+    create: {
+      id: seasonId,
+      name: "Season 2",
+      status: "ACTIVE",
+      startsAt: new Date(),
+      endsAt: new Date(Date.now() + 30 * 86_400_000),
+    },
+  });
+
+  const divisions: Array<{ id: string; name: string; tier: Tier; rank: number }> = [
+    { id: "div-amateur", name: "Amateur Open", tier: "AMATEUR", rank: 0 },
+    { id: "div-intermediate", name: "Intermediate Regional", tier: "INTERMEDIATE", rank: 1 },
+    { id: "div-advanced", name: "Advanced Conference", tier: "ADVANCED", rank: 2 },
+    { id: "div-elite", name: "Elite Premier", tier: "ELITE", rank: 3 },
+    { id: "div-champions", name: "Champions Circuit", tier: "CHAMPIONS", rank: 4 },
+  ];
+  for (const d of divisions) {
+    await prisma.division.upsert({
+      where: { id: d.id },
+      update: {},
+      create: { id: d.id, seasonId, name: d.name, tier: d.tier, rank: d.rank },
+    });
+  }
+
+  const leagues: Array<{
+    id: string;
+    divisionId: string;
+    name: string;
+    buyInCents: bigint;
+    rakeBps: number;
+    capacity: number;
+    status: LeagueStatus;
+  }> = [
+    { id: "lg-am-a", divisionId: "div-amateur", name: "Amateur Open A", buyInCents: 0n, rakeBps: 0, capacity: 16, status: "OPEN" },
+    { id: "lg-am-b", divisionId: "div-amateur", name: "Amateur Open B", buyInCents: 0n, rakeBps: 0, capacity: 16, status: "OPEN" },
+    { id: "lg-int-a", divisionId: "div-intermediate", name: "Regional League A", buyInCents: 1_000n, rakeBps: 500, capacity: 16, status: "OPEN" },
+    { id: "lg-int-cup", divisionId: "div-intermediate", name: "Regional Cup", buyInCents: 1_000n, rakeBps: 500, capacity: 16, status: "LIVE" },
+    { id: "lg-adv-a", divisionId: "div-advanced", name: "Conference North", buyInCents: 2_500n, rakeBps: 500, capacity: 16, status: "OPEN" },
+    { id: "lg-adv-b", divisionId: "div-advanced", name: "Conference South", buyInCents: 2_500n, rakeBps: 500, capacity: 16, status: "OPEN" },
+    { id: "lg-elite-a", divisionId: "div-elite", name: "Premier A", buyInCents: 5_000n, rakeBps: 500, capacity: 16, status: "OPEN" },
+    { id: "lg-elite-legacy", divisionId: "div-elite", name: "Premier Legacy", buyInCents: 5_000n, rakeBps: 500, capacity: 16, status: "ENDED" },
+    { id: "lg-champ", divisionId: "div-champions", name: "Champions Invitational", buyInCents: 15_000n, rakeBps: 500, capacity: 8, status: "LIVE" },
+  ];
+  for (const l of leagues) {
+    await prisma.league.upsert({
+      where: { id: l.id },
+      update: {},
+      create: l,
+    });
+  }
 }
 
 /** Fail loudly if any cached balance drifts from its ledger sum. */

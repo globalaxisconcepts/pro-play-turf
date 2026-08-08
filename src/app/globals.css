@@ -1657,3 +1657,560 @@ h3 {
     animation: none;
   }
 }
+
+/* ================================================================= *
+ * Slice 3 — Leagues browse · League Card · league detail · admin     *
+ * ================================================================= */
+
+/* Page header + season strip */
+.lg-head {
+  max-width: 720px;
+}
+.lg-head h1 {
+  font-size: clamp(34px, 6vw, 56px);
+  margin-top: 10px;
+}
+.lg-head p {
+  color: var(--t2);
+  font-size: 16px;
+  margin-top: 14px;
+}
+.lg-season-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 8px 16px;
+  border-radius: var(--pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--t2);
+  font-size: 13px;
+  font-family: var(--tech);
+}
+.lg-live-tag {
+  color: var(--primary);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+/* Filter bar */
+.lg-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin: 32px 0 8px;
+  padding: 16px;
+  border-radius: var(--r-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+}
+.lg-search {
+  flex: 1 1 220px;
+}
+.lg-search input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--t1);
+  font-size: 14px;
+}
+.lg-search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.22);
+}
+.lg-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--t3);
+}
+.lg-select span {
+  font-family: var(--tech);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.lg-select select {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--t1);
+  font-size: 14px;
+  min-width: 140px;
+  cursor: pointer;
+}
+.lg-select select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.lg-clear {
+  height: 44px;
+}
+
+/* Division sections — the browse lists leagues by division */
+.lg-divisions {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+  margin-top: 32px;
+}
+.lg-division-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  --tier-color: var(--amateur);
+}
+.lg-division-head[data-tier="INTERMEDIATE"] {
+  --tier-color: var(--intermediate);
+}
+.lg-division-head[data-tier="ADVANCED"] {
+  --tier-color: var(--advanced);
+}
+.lg-division-head[data-tier="ELITE"] {
+  --tier-color: var(--elite);
+}
+.lg-division-head[data-tier="CHAMPIONS"] {
+  --tier-color: #a78bfa;
+}
+.lg-division-head h2 {
+  font-size: 20px;
+}
+.lg-division-tier {
+  font-family: var(--tech);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tier-color);
+}
+.lg-division-count {
+  margin-left: auto;
+  font-family: var(--tech);
+  font-size: 12px;
+  color: var(--t3);
+}
+
+/* Grid */
+.lg-grid {
+  display: grid;
+  gap: 20px;
+  margin-top: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+.lg-division .lg-grid {
+  margin-top: 20px;
+}
+
+/* League Card */
+.lg-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: linear-gradient(165deg, var(--surface-2), var(--surface-1));
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+  --tier-color: var(--amateur);
+}
+.lg-card[data-tier="INTERMEDIATE"] {
+  --tier-color: var(--intermediate);
+}
+.lg-card[data-tier="ADVANCED"] {
+  --tier-color: var(--advanced);
+}
+.lg-card[data-tier="ELITE"] {
+  --tier-color: var(--elite);
+}
+.lg-card[data-tier="CHAMPIONS"] {
+  --tier-color: #a78bfa;
+}
+.lg-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--tier-color);
+  opacity: 0.85;
+}
+.lg-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+.lg-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lg-tier {
+  font-family: var(--tech);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tier-color);
+}
+.lg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: var(--pill);
+  color: var(--t2);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+}
+.lg-badge[data-status="LIVE"] {
+  color: var(--live);
+  background: rgba(255, 77, 77, 0.12);
+  border-color: rgba(255, 77, 77, 0.3);
+}
+.lg-badge[data-status="OPEN"] {
+  color: var(--primary);
+  background: rgba(61, 255, 136, 0.1);
+  border-color: rgba(61, 255, 136, 0.28);
+}
+.lg-badge[data-status="FILLING"] {
+  color: var(--warn);
+  background: rgba(255, 176, 32, 0.12);
+  border-color: rgba(255, 176, 32, 0.3);
+}
+.lg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--live);
+  animation: lg-pulse 1.4s ease-in-out infinite;
+}
+@keyframes lg-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+.lg-name {
+  font-size: 21px;
+}
+.lg-div {
+  color: var(--t3);
+  font-size: 13px;
+  margin-top: -6px;
+}
+.lg-stats {
+  display: flex;
+  gap: 24px;
+  margin-top: 4px;
+}
+.lg-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.lg-k {
+  font-size: 11px;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.lg-v {
+  font-family: var(--tech);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--t1);
+}
+.lg-v.gold {
+  color: var(--gold);
+}
+.lg-v.free {
+  color: var(--primary);
+}
+.lg-cap {
+  margin-top: 4px;
+}
+.lg-cap-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--t3);
+  margin-bottom: 6px;
+}
+.lg-cap-track {
+  height: 6px;
+  border-radius: var(--pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.lg-cap-fill {
+  height: 100%;
+  border-radius: var(--pill);
+  background: var(--tier-color);
+  min-width: 2px;
+}
+.lg-promo {
+  font-size: 12px;
+  color: var(--t2);
+}
+.lg-cta {
+  margin-top: 6px;
+  text-align: center;
+}
+
+/* League detail */
+.lg-back {
+  display: inline-block;
+  color: var(--t2);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.lg-back:hover {
+  color: var(--t1);
+}
+.lg-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+.lg-detail-head h1 {
+  font-size: clamp(30px, 5vw, 48px);
+  margin-top: 8px;
+}
+.lg-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+
+/* Admin console */
+.admin-shell {
+  min-height: 100vh;
+  background: var(--bg);
+}
+.admin-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-1);
+}
+.admin-tag {
+  font-family: var(--tech);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--primary-ink);
+  background: var(--primary);
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+}
+.admin-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+  color: var(--t2);
+}
+.admin-nav a:hover {
+  color: var(--t1);
+}
+.admin-main {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+.admin-page h1 {
+  font-size: 32px;
+}
+.admin-sub {
+  color: var(--t2);
+  margin-top: 8px;
+  font-size: 15px;
+}
+.admin-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-top: 28px;
+}
+.admin-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px;
+}
+.admin-card h2 {
+  font-size: 17px;
+  font-family: var(--disp);
+}
+.admin-card input,
+.admin-card select {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  margin-top: 6px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--t1);
+  font-size: 14px;
+}
+.admin-card .field-label {
+  display: block;
+}
+.admin-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.admin-list {
+  margin-top: 40px;
+}
+.admin-list h2 {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+.admin-season {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px;
+  margin-bottom: 14px;
+  background: var(--surface-1);
+}
+.admin-season h3 {
+  font-size: 16px;
+}
+.admin-season ul {
+  margin: 10px 0 0 18px;
+  color: var(--t2);
+  font-size: 14px;
+}
+.admin-season li {
+  margin: 4px 0;
+}
+.admin-pill {
+  font-family: var(--tech);
+  font-size: 11px;
+  color: var(--t3);
+  margin-left: 8px;
+}
+.admin-empty {
+  color: var(--t3);
+  font-size: 14px;
+}
+
+/* Error state actions (leagues + admin boundaries) */
+.lg-error-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* Loading skeletons */
+.lg-skel {
+  display: block;
+  height: 12px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(
+    90deg,
+    var(--surface-3) 25%,
+    var(--surface-2) 37%,
+    var(--surface-3) 63%
+  );
+  background-size: 400% 100%;
+  animation: lg-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes lg-shimmer {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}
+.lg-skel-card {
+  pointer-events: none;
+}
+/* Neutralise the tier accent bar — a skeleton has no tier yet. */
+.lg-skel-card::before {
+  opacity: 0.25;
+}
+.lg-skel-title {
+  height: 22px;
+  width: 70%;
+}
+.lg-skel-pill {
+  height: 20px;
+  width: 62px;
+  border-radius: var(--pill);
+}
+.lg-skel-stats {
+  height: 44px;
+}
+.lg-skel-bar {
+  height: 20px;
+}
+.lg-skel-cta {
+  height: 42px;
+  border-radius: var(--r-md);
+  margin-top: 6px;
+}
+.lg-skel-field {
+  height: 42px;
+  border-radius: var(--r-md);
+}
+
+@media (max-width: 640px) {
+  .lg-detail-stats {
+    grid-template-columns: 1fr;
+  }
+  .admin-row {
+    grid-template-columns: 1fr;
+  }
+  .lg-division-head {
+    flex-wrap: wrap;
+  }
+}
+
+/* A11y floor: the Slice 3 motion is decoration — drop it on request. */
+@media (prefers-reduced-motion: reduce) {
+  .lg-dot,
+  .lg-skel {
+    animation: none;
+  }
+  .lg-card {
+    transition: none;
+  }
+  .lg-card:hover {
+    transform: none;
+  }
+}

@@ -23,6 +23,13 @@ const schema = z.object({
    * so Next can inline it at build time.
    */
   FIREBASE_SERVICE_ACCOUNT_KEY: z.string().optional(),
+  /**
+   * Dev-only: which seeded user the offline `auth()` fallback resolves to.
+   * Defaults to the demo player; point it at the seeded admin
+   * (`demo-admin-user`) to exercise /admin without Firebase. Ignored entirely
+   * in production and whenever FIREBASE_SERVICE_ACCOUNT_KEY is set.
+   */
+  DEV_SESSION_USER_ID: z.string().optional(),
 });
 
 export type Env = z.infer<typeof schema>;

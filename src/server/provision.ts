@@ -1,11 +1,12 @@
 import "server-only";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
+import { type AppRole, appRole } from "@/lib/roles";
 import { upsertMember } from "@/server/members/member-service";
 
 export interface ProvisionResult {
   userId: string;
-  role: "PLAYER" | "REVIEWER" | "ADMIN";
+  role: AppRole;
 }
 
 /**
@@ -72,8 +73,4 @@ export async function provisionUser(
     console.error("[provision] Postgres provisioning failed:", err);
     return { userId: firebaseUid, role: "PLAYER" };
   }
-}
-
-function appRole(role: string): ProvisionResult["role"] {
-  return role === "ADMIN" || role === "REVIEWER" ? role : "PLAYER";
 }

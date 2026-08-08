@@ -5,7 +5,8 @@ internal double-entry **ledger** with test credits until a real payment gateway 
 13). Built in 14 vertical slices. Full design + plan in [`docs/`](docs/).
 
 **Current status:** shipped — **Slice 0 (foundations)** + **Slice 2 (money core)** + **Slice 1
-(Firebase auth + Firestore member profiles)**. Next per the build plan: Slice 3 (leagues) onward.
+(Firebase auth + Firestore member profiles)** + **Slice 3 (seasons/divisions/leagues + public
+browse + admin authoring)**. Next per the build plan: Slice 4 (join a league — escrow on entry).
 
 **Auth/data topology:** Firebase Auth (Email/Password + Google) → App-Router session cookies
 (Admin SDK, Node runtime). Member/profile data lives in **Firestore** `members/{uid}` (server-side
@@ -14,8 +15,9 @@ with a thin `User` anchor keyed by `firebaseUid`. `provisionUser` (src/server/pr
 creates both stores on first sign-in. `auth()` (src/server/auth.ts) verifies the session cookie
 and redirects to `/signin` when unauthenticated, with a **dev fallback** to the seeded demo player
 when `FIREBASE_SERVICE_ACCOUNT_KEY` is unset (non-prod), so the app stays runnable/verifiable
-offline. `firebase-admin` is Node-only (never Edge); `next.config.ts` has
-`serverExternalPackages: ["firebase-admin"]`.
+offline. That fallback reads the **real role** off the `User` row, so
+`DEV_SESSION_USER_ID=demo-admin-user` opens `/admin` offline after `db:seed`. `firebase-admin` is
+Node-only (never Edge); `next.config.ts` has `serverExternalPackages: ["firebase-admin"]`.
 
 ## Golden rules (never violate)
 

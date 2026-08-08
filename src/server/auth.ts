@@ -1,9 +1,11 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { isDatabaseConfigured, prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { getAdminAuth, isFirebaseAdminConfigured } from "@/lib/firebase/admin";
 import { SESSION_COOKIE } from "@/lib/firebase/session";
+import { type AppRole, appRole } from "@/lib/roles";
 import { provisionUser } from "@/server/provision";
 
 /**
@@ -17,17 +19,36 @@ import { provisionUser } from "@/server/provision";
  * offline. Setting FIREBASE_SERVICE_ACCOUNT_KEY switches on real auth.
  */
 export const DEMO_USER_ID = "demo-player-user";
+export const DEMO_ADMIN_USER_ID = "demo-admin-user";
 
 export interface Session {
   userId: string;
-  role: "PLAYER" | "REVIEWER" | "ADMIN";
+  role: AppRole;
+}
+
+/**
+ * The offline session used when Firebase isn't configured (never in prod).
+ * Resolves to DEV_SESSION_USER_ID or the seeded demo player, and reads the real
+ * role off the User row so `DEV_SESSION_USER_ID=demo-admin-user` can reach
+ * /admin. With no database there are no roles to read — stay a PLAYER.
+ */
+async function devSession(): Promise<Session> {
+  const userId = env.DEV_SESSION_USER_ID?.trim() || DEMO_USER_ID;
+  if (!isDatabaseConfigured()) return { userId, role: "PLAYER" };
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+    return { userId, role: appRole(user?.role ?? "PLAYER") };
+  } catch {
+    return { userId, role: "PLAYER" };
+  }
 }
 
 export async function getSession(): Promise<Session | null> {
   if (!isFirebaseAdminConfigured()) {
-    return env.NODE_ENV === "production"
-      ? null
-      : { userId: DEMO_USER_ID, role: "PLAYER" };
+    return env.NODE_ENV === "production" ? null : devSession();
   }
 
   const cookie = (await cookies()).get(SESSION_COOKIE)?.value;

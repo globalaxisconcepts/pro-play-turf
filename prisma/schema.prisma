@@ -1,6 +1,7 @@
 // Pro Play Turf — Prisma schema.
 // Slice 2 introduces the money core: User, Wallet, and an append-only,
-// double-entry ledger. Later slices add leagues, matches, cards, etc.
+// double-entry ledger. Slice 3 adds the league structure: Season, Division
+// (tier), and League. Later slices add matches, cards, etc.
 
 generator client {
   provider = "prisma-client-js"
@@ -74,4 +75,73 @@ model LedgerEntry {
 
   @@index([walletId])
   @@index([txnId])
+}
+
+// ---------------------------------------------------------------------------
+// Slice 3 — league structure. A Season contains ranked Divisions (tiers), each
+// holding one or more Leagues that players buy into. No money lives here; the
+// buy-in escrow + prize flows all run through LedgerService (Slices 4/8).
+// ---------------------------------------------------------------------------
+
+enum SeasonStatus {
+  UPCOMING
+  ACTIVE
+  CLOSED
+}
+
+// The competitive ladder, low → high. Champions is the invite-only apex tier.
+enum Tier {
+  AMATEUR
+  INTERMEDIATE
+  ADVANCED
+  ELITE
+  CHAMPIONS
+}
+
+enum LeagueStatus {
+  OPEN // accepting entries
+  FILLING // near capacity
+  LIVE // season underway, closed to new entries
+  ENDED // settled
+}
+
+model Season {
+  id        String       @id @default(cuid())
+  name      String
+  status    SeasonStatus @default(UPCOMING)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime     @default(now())
+  divisions Division[]
+
+  @@index([status])
+}
+
+model Division {
+  id        String   @id @default(cuid())
+  seasonId  String
+  season    Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  name      String
+  tier      Tier
+  rank      Int // ordering within the season; higher = more prestigious
+  leagues   League[]
+  createdAt DateTime @default(now())
+
+  @@index([seasonId])
+}
+
+model League {
+  id         String       @id @default(cuid())
+  divisionId String
+  division   Division     @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  name       String
+  buyInCents BigInt       @default(0) // 0 => a free league
+  rakeBps    Int          @default(0) // basis points of the pool routed to HOUSE
+  capacity   Int          @default(16)
+  status     LeagueStatus @default(OPEN)
+  startsAt   DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@index([divisionId])
+  @@index([status])
 }

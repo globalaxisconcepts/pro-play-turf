@@ -9,7 +9,7 @@ import { Logo } from "./Logo";
 type Variant = "marketing" | "app";
 
 const PRIMARY_LINKS = [
-  { href: "/#leagues", label: "Leagues", match: "leagues" },
+  { href: "/leagues", label: "Leagues", match: "leagues" },
   { href: "/#scores", label: "Scores", match: "scores" },
   { href: "/#champions", label: "Champions League", match: "champions" },
   { href: "/#how", label: "How It Works", match: "how" },
