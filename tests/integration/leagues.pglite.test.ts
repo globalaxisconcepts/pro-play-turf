@@ -128,6 +128,99 @@ describe("LeagueService (PGlite integration)", () => {
     });
   });
 
+  /** Entries written directly — this suite tests the read path, not joining. */
+  async function enter(
+    leagueId: string,
+    userId: string,
+    status: "ACTIVE" | "REFUNDED" = "ACTIVE",
+  ) {
+    await prisma.user.upsert({
+      where: { id: userId },
+      update: {},
+      create: { id: userId, email: `${userId}@t.test`, displayName: userId },
+    });
+    await prisma.leagueEntry.create({
+      data: { leagueId, userId, status, buyInCents: 0n },
+    });
+  }
+
+  it("counts filled spots from ACTIVE entries", async () => {
+    const { premierId } = await seedStructure();
+    await enter(premierId, "u1");
+    await enter(premierId, "u2");
+
+    const { rows } = await leagues.listCurrentSeasonLeagues();
+    const premier = rows.find((r) => r.id === premierId);
+    expect(premier?.spotsFilled).toBe(2);
+    expect(await leagues.getLeague(premierId)).toMatchObject({
+      spotsFilled: 2,
+    });
+  });
+
+  it("does not count refunded entries against capacity", async () => {
+    const { premierId } = await seedStructure();
+    await enter(premierId, "u1");
+    await enter(premierId, "u2", "REFUNDED");
+
+    expect(await leagues.getLeague(premierId)).toMatchObject({
+      spotsFilled: 1,
+    });
+  });
+
+  it("reports an empty league as having no filled spots", async () => {
+    const { freeId } = await seedStructure();
+    expect(await leagues.getLeague(freeId)).toMatchObject({ spotsFilled: 0 });
+  });
+
+  describe("entrants", () => {
+    it("lists active entrants oldest first, with display names", async () => {
+      const { premierId } = await seedStructure();
+      await enter(premierId, "u1");
+      await enter(premierId, "u2");
+
+      const list = await leagues.entrants(premierId);
+      expect(list.map((e) => e.userId)).toEqual(["u1", "u2"]);
+      expect(list[0].displayName).toBe("u1");
+    });
+
+    it("omits refunded entrants", async () => {
+      const { premierId } = await seedStructure();
+      await enter(premierId, "u1");
+      await enter(premierId, "u2", "REFUNDED");
+
+      expect((await leagues.entrants(premierId)).map((e) => e.userId)).toEqual([
+        "u1",
+      ]);
+    });
+
+    it("is empty for a league nobody joined", async () => {
+      const { freeId } = await seedStructure();
+      expect(await leagues.entrants(freeId)).toEqual([]);
+    });
+  });
+
+  describe("entryFor", () => {
+    it("returns the active entry for a player who joined", async () => {
+      const { premierId } = await seedStructure();
+      await enter(premierId, "u1");
+
+      expect(await leagues.entryFor(premierId, "u1")).toMatchObject({
+        status: "ACTIVE",
+      });
+    });
+
+    it("returns null for a player who never joined", async () => {
+      const { premierId } = await seedStructure();
+      expect(await leagues.entryFor(premierId, "nobody")).toBeNull();
+    });
+
+    it("returns null once the entry is refunded", async () => {
+      const { premierId } = await seedStructure();
+      await enter(premierId, "u1", "REFUNDED");
+      expect(await leagues.entryFor(premierId, "u1")).toBeNull();
+    });
+  });
+
   it("reads an ADMIN role back off the User row (the offline /admin path)", async () => {
     await prisma.user.create({
       data: {

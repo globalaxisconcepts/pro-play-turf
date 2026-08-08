@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { walletLock } from "@/lib/lock";
 import { LedgerService } from "./ledger/ledger-service";
+import { JoinService } from "./leagues/join-service";
 import { LeagueService } from "./leagues/league-service";
 import { StubPaymentProvider } from "./payments/stub-provider";
 import { WalletService } from "./wallet/wallet-service";
@@ -14,3 +15,4 @@ export const ledgerService = new LedgerService(prisma, walletLock());
 export const paymentProvider = new StubPaymentProvider(prisma, ledgerService);
 export const walletService = new WalletService(prisma);
 export const leagueService = new LeagueService(prisma);
+export const joinService = new JoinService(prisma, ledgerService);

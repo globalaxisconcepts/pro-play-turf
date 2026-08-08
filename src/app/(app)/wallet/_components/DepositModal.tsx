@@ -12,10 +12,22 @@ const CHIPS = [
   { label: "$100", value: "100.00" },
 ];
 
+/**
+ * Only same-origin paths may be returned to. `//evil.com` is a valid URL to the
+ * browser but not to us — anything that isn't a single-slash path is dropped.
+ */
+function safeReturnPath(next: string | null): string | null {
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return null;
+  return next;
+}
+
 export function DepositModal() {
   const router = useRouter();
   const params = useSearchParams();
   const wantsDeposit = params.get("deposit") === "1";
+  // Set when a flow sent the player here to top up — e.g. a league buy-in they
+  // couldn't cover. On success we hand them straight back to it.
+  const returnTo = safeReturnPath(params.get("next"));
 
   const [localOpen, setLocalOpen] = useState(false);
   const [amount, setAmount] = useState("25.00");
@@ -34,7 +46,12 @@ export function DepositModal() {
     startTransition(async () => {
       const result = await depositAction({ ok: false }, formData);
       setState(result);
-      if (result.ok) close();
+      if (!result.ok) return;
+      if (returnTo) {
+        router.replace(returnTo);
+        return;
+      }
+      close();
     });
   }
 

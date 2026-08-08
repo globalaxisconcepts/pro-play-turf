@@ -2,12 +2,31 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isDatabaseConfigured } from "@/lib/db";
-import { formatCents } from "@/lib/money";
 import { STATUS_LABEL, TIER_LABEL } from "@/lib/leagues";
-import { leagueService } from "@/server/services";
+import { formatCents } from "@/lib/money";
+import { getSession } from "@/server/auth";
+import { prizeBreakdown } from "@/server/leagues/prize";
 import { projectedPoolCents, spotsLeft } from "@/server/leagues/types";
+import { leagueService, walletService } from "@/server/services";
+import { JoinPanel, type JoinAvailability } from "./_components/JoinPanel";
 
 export const dynamic = "force-dynamic";
+
+const TABS = [
+  { key: "standings", label: "Standings" },
+  { key: "fixtures", label: "Fixtures" },
+  { key: "prize", label: "Prize Breakdown" },
+  { key: "rules", label: "Rules" },
+] as const;
+
+type TabKey = (typeof TABS)[number]["key"];
+
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function toTab(sp: SearchParams): TabKey {
+  const raw = Array.isArray(sp.tab) ? sp.tab[0] : sp.tab;
+  return TABS.some((t) => t.key === raw) ? (raw as TabKey) : "standings";
+}
 
 export async function generateMetadata({
   params,
@@ -23,17 +42,43 @@ export async function generateMetadata({
 
 export default async function LeagueDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
-  const { id } = await params;
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
   // No database yet → no leagues exist, so this really is a 404. A failure with
   // a database wired is a genuine error and belongs to the error boundary.
   if (!isDatabaseConfigured()) notFound();
+
   const row = await leagueService.getLeague(id);
   if (!row) notFound();
 
+  const tab = toTab(sp);
+  const session = await getSession();
+  const [entry, balances, entrants] = await Promise.all([
+    session ? leagueService.entryFor(id, session.userId) : null,
+    session ? walletService.getBalances(session.userId) : null,
+    leagueService.entrants(id),
+  ]);
+
   const isFree = row.buyInCents === 0n;
+  const open = row.status === "OPEN" || row.status === "FILLING";
+  const left = spotsLeft(row);
+  const prize = prizeBreakdown(row);
+
+  let availability: JoinAvailability;
+  if (!session) availability = "signed-out";
+  else if (entry) availability = "entered";
+  else if (!open) availability = "closed";
+  else if (left <= 0) availability = "full";
+  else availability = "joinable";
+
+  const fillPct =
+    row.capacity > 0
+      ? Math.min(100, Math.round((row.spotsFilled / row.capacity) * 100))
+      : 0;
 
   return (
     <main className="app-main">
@@ -49,6 +94,7 @@ export default async function LeagueDetailPage({
           <h1>{row.name}</h1>
         </div>
         <span className="lg-badge" data-status={row.status}>
+          {row.status === "LIVE" && <span className="lg-dot" aria-hidden />}
           {STATUS_LABEL[row.status]}
         </span>
       </header>
@@ -67,20 +113,184 @@ export default async function LeagueDetailPage({
         <div className="bal-card">
           <div className="bal-k">Spots</div>
           <div className="bal-v">
-            {spotsLeft(row)} / {row.capacity}
+            {row.spotsFilled} / {row.capacity}
           </div>
         </div>
       </div>
 
-      <div className="wallet-notice">
-        <span className="wallet-notice-ic" aria-hidden>
-          ✨
-        </span>
-        <div>
-          <strong>Joining opens shortly.</strong> Standings, fixtures, and the
-          buy-in flow are being wired up for this league.
+      <section className="lg-detail-join">
+        <div className="lg-cap">
+          <div className="lg-cap-row">
+            <span>
+              {row.spotsFilled} / {row.capacity} players
+            </span>
+            <span>{left} open</span>
+          </div>
+          <div className="lg-cap-track" aria-hidden>
+            <div className="lg-cap-fill" style={{ width: `${fillPct}%` }} />
+          </div>
         </div>
-      </div>
+        <JoinPanel
+          leagueId={row.id}
+          leagueName={row.name}
+          availability={availability}
+          isFree={isFree}
+          buyInLabel={formatCents(row.buyInCents)}
+          availableLabel={formatCents(balances?.availableCents ?? 0n)}
+          canAfford={(balances?.availableCents ?? 0n) >= row.buyInCents}
+          refundable={open}
+        />
+      </section>
+
+      <nav className="lg-tabs" aria-label="League sections">
+        {TABS.map((t) => (
+          <Link
+            key={t.key}
+            href={`/leagues/${row.id}?tab=${t.key}`}
+            className="lg-tab"
+            aria-current={t.key === tab ? "page" : undefined}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+
+      <section className="lg-tab-panel">
+        {tab === "standings" && (
+          <>
+            {entrants.length === 0 ? (
+              <div className="empty">
+                <div className="ic" aria-hidden>
+                  🏁
+                </div>
+                <h3>No one has entered yet</h3>
+                <p>Be the first to take a spot in this league.</p>
+              </div>
+            ) : (
+              <>
+                <p className="lg-panel-note">
+                  Standings start counting when the league goes live. This is the
+                  current roster.
+                </p>
+                <table className="tx-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Player</th>
+                      <th className="hide-sm">Joined</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entrants.map((e, i) => (
+                      <tr
+                        key={e.userId}
+                        data-you={e.userId === session?.userId || undefined}
+                      >
+                        <td>{i + 1}</td>
+                        <td>
+                          {e.displayName}
+                          {e.userId === session?.userId && (
+                            <span className="lg-you">You</span>
+                          )}
+                        </td>
+                        <td className="hide-sm">
+                          {e.joinedAt.toLocaleDateString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </>
+        )}
+
+        {tab === "fixtures" && (
+          <div className="empty">
+            <div className="ic" aria-hidden>
+              📅
+            </div>
+            <h3>Fixtures aren&apos;t scheduled yet</h3>
+            <p>
+              The schedule is generated once the league fills and kicks off.
+              You&apos;ll be notified when your first match is set.
+            </p>
+          </div>
+        )}
+
+        {tab === "prize" && (
+          <>
+            <p className="lg-panel-note">
+              Projected at full capacity ({row.capacity} players
+              {isFree ? "" : ` × ${formatCents(row.buyInCents)}`}).
+            </p>
+            <table className="tx-table">
+              <thead>
+                <tr>
+                  <th>Place</th>
+                  <th>Share</th>
+                  <th>Payout</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prize.places.map((p) => (
+                  <tr key={p.place}>
+                    <td>{ordinal(p.place)}</td>
+                    <td>{p.shareBps / 100}%</td>
+                    <td className="gold">{formatCents(p.amountCents)}</td>
+                  </tr>
+                ))}
+                <tr>
+                  <td>House rake</td>
+                  <td>{row.rakeBps / 100}%</td>
+                  <td>{formatCents(prize.rakeCents)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </>
+        )}
+
+        {tab === "rules" && (
+          <div className="lg-rules">
+            <h3>How this league works</h3>
+            <ul>
+              <li>
+                <strong>Entry.</strong>{" "}
+                {isFree
+                  ? "This league is free to enter."
+                  : `Your ${formatCents(row.buyInCents)} buy-in is held in escrow — not spent — from the moment you join.`}
+              </li>
+              <li>
+                <strong>Withdrawing.</strong> You can withdraw any time before
+                the league starts and your buy-in is returned in full. Once it
+                goes live, entries are locked.
+              </li>
+              <li>
+                <strong>Format.</strong> {row.capacity} players, one match
+                against each opponent. Results are reported by both players with
+                proof, and disagreements go to human review.
+              </li>
+              <li>
+                <strong>Payouts.</strong> The top three share the pool
+                {row.rakeBps > 0 && ` after a ${row.rakeBps / 100}% house rake`};
+                see the Prize Breakdown tab.
+              </li>
+              <li>
+                <strong>Promotion &amp; relegation.</strong> The top finishers
+                move up a division next season; the bottom finishers move down.
+              </li>
+              <li>
+                <strong>Fair play.</strong> Zero tolerance for cheating,
+                smurfing, or result-fixing. Confirmed breaches forfeit the entry.
+              </li>
+            </ul>
+          </div>
+        )}
+      </section>
     </main>
   );
+}
+
+function ordinal(n: number): string {
+  return n === 1 ? "1st" : n === 2 ? "2nd" : n === 3 ? "3rd" : `${n}th`;
 }

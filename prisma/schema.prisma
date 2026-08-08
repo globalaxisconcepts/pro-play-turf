@@ -29,15 +29,16 @@ enum Bucket {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
+  id          String        @id @default(cuid())
+  email       String        @unique
   displayName String
-  role        Role     @default(PLAYER)
+  role        Role          @default(PLAYER)
   // Firebase Auth uid — the bridge to the Firestore member profile. Nullable so
   // system/seed accounts (which have no Firebase identity) remain valid.
-  firebaseUid String?  @unique
+  firebaseUid String?       @unique
   wallet      Wallet?
-  createdAt   DateTime @default(now())
+  entries     LeagueEntry[]
+  createdAt   DateTime      @default(now())
 }
 
 model Wallet {
@@ -131,17 +132,50 @@ model Division {
 }
 
 model League {
-  id         String       @id @default(cuid())
+  id         String        @id @default(cuid())
   divisionId String
-  division   Division     @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  division   Division      @relation(fields: [divisionId], references: [id], onDelete: Cascade)
   name       String
-  buyInCents BigInt       @default(0) // 0 => a free league
-  rakeBps    Int          @default(0) // basis points of the pool routed to HOUSE
-  capacity   Int          @default(16)
-  status     LeagueStatus @default(OPEN)
+  buyInCents BigInt        @default(0) // 0 => a free league
+  rakeBps    Int           @default(0) // basis points of the pool routed to HOUSE
+  capacity   Int           @default(16)
+  status     LeagueStatus  @default(OPEN)
   startsAt   DateTime?
-  createdAt  DateTime     @default(now())
+  createdAt  DateTime      @default(now())
+  entries    LeagueEntry[]
 
   @@index([divisionId])
   @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Slice 4 — league entries. Joining holds the buy-in in ESCROW; the entry keeps
+// the id of the ledger txn that placed the hold so the refund can reverse
+// exactly that transaction. No money is cached here — the ledger stays truth.
+// ---------------------------------------------------------------------------
+
+enum EntryStatus {
+  ACTIVE // holding escrow, competing
+  REFUNDED // withdrew before the league started; escrow released
+}
+
+model LeagueEntry {
+  id          String      @id @default(cuid())
+  leagueId    String
+  league      League      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // The ENTRY_HOLD txn that moved the buy-in AVAILABLE→ESCROW. Null only for
+  // free leagues, where joining moves no money.
+  escrowTxnId String?
+  // Denormalised from League.buyInCents at join time: the buy-in can be edited
+  // later, but the amount actually held must stay reversible to the cent.
+  buyInCents  BigInt      @default(0)
+  status      EntryStatus @default(ACTIVE)
+  joinedAt    DateTime    @default(now())
+
+  // One entry per player per league — the double-join guard, enforced by the DB.
+  @@unique([leagueId, userId])
+  @@index([leagueId, status])
+  @@index([userId])
 }

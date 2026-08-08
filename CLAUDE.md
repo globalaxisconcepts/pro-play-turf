@@ -6,7 +6,9 @@ internal double-entry **ledger** with test credits until a real payment gateway 
 
 **Current status:** shipped — **Slice 0 (foundations)** + **Slice 2 (money core)** + **Slice 1
 (Firebase auth + Firestore member profiles)** + **Slice 3 (seasons/divisions/leagues + public
-browse + admin authoring)**. Next per the build plan: Slice 4 (join a league — escrow on entry).
+browse + admin authoring)** + **Slice 4 (join a league — buy-in escrow, capacity/double-join
+guards, pre-start refund, tabbed league detail)**. Next per the build plan: Slice 5 (fixtures +
+submit result + proof).
 
 **Auth/data topology:** Firebase Auth (Email/Password + Google) → App-Router session cookies
 (Admin SDK, Node runtime). Member/profile data lives in **Firestore** `members/{uid}` (server-side
@@ -42,7 +44,10 @@ Node-only (never Edge); `next.config.ts` has `serverExternalPackages: ["firebase
 - **Next.js 16 (App Router) + TypeScript strict + Tailwind v4.** Server Components by default;
   Server Actions for mutations; Route Handlers for webhooks. `@/*` → `src/*`.
 - **Prisma 6 with the node-postgres driver adapter** (`@prisma/adapter-pg`) — works with Neon,
-  local Postgres, or `prisma dev`. Every schema change = a migration + updated seed.
+  local Postgres, or `prisma dev`. **Migrations are deliberately deferred** while no real
+  Postgres is wired: `prisma/migrations/` does not exist, and every schema change goes
+  `db:push` + `npm run db:pglite-sql` (regenerates the PGlite DDL) + an updated `seed.ts`.
+  Baseline the migration history in the same change that first connects Neon.
 - **Redis (Upstash REST)** for the production wallet lock; an in-process `async-mutex` lock is
   the default for dev/test. Lock impl chosen by `LEDGER_LOCK_DRIVER` (`memory` | `redis`).
 - **Inngest** for background jobs (one health job so far). **Zod** at every boundary. **npm**.

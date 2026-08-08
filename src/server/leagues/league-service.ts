@@ -1,5 +1,7 @@
 import type {
+  EntryStatus,
   LeagueStatus,
+  Prisma,
   PrismaClient,
   SeasonStatus,
   Tier,
@@ -16,6 +18,51 @@ export interface CurrentSeason {
 export interface SeasonListing {
   season: CurrentSeason | null;
   rows: LeagueRow[];
+}
+
+/** A player holding a seat in a league. */
+export interface Entrant {
+  userId: string;
+  displayName: string;
+  joinedAt: Date;
+}
+
+/** The signed-in player's own entry, as the detail page needs it. */
+export interface ViewerEntry {
+  id: string;
+  status: EntryStatus;
+  buyInCents: bigint;
+  joinedAt: Date;
+}
+
+/**
+ * Division context plus the live seat count. Only ACTIVE entries occupy a seat —
+ * a REFUNDED entry has released its escrow and freed the spot.
+ */
+const LEAGUE_ROW_INCLUDE = {
+  division: { select: { name: true, tier: true, rank: true } },
+  _count: { select: { entries: { where: { status: "ACTIVE" } } } },
+} satisfies Prisma.LeagueInclude;
+
+type LeagueWithContext = Prisma.LeagueGetPayload<{
+  include: typeof LEAGUE_ROW_INCLUDE;
+}>;
+
+function toRow(l: LeagueWithContext): LeagueRow {
+  return {
+    id: l.id,
+    name: l.name,
+    divisionId: l.divisionId,
+    divisionName: l.division.name,
+    tier: l.division.tier,
+    divisionRank: l.division.rank,
+    buyInCents: l.buyInCents,
+    rakeBps: l.rakeBps,
+    capacity: l.capacity,
+    spotsFilled: l._count.entries,
+    status: l.status,
+    startsAt: l.startsAt,
+  };
 }
 
 /**
@@ -48,53 +95,57 @@ export class LeagueService {
 
     const leagues = await this.prisma.league.findMany({
       where: { division: { seasonId: season.id } },
-      include: {
-        division: { select: { name: true, tier: true, rank: true } },
-      },
+      include: LEAGUE_ROW_INCLUDE,
     });
 
-    const rows: LeagueRow[] = leagues.map((l) => ({
-      id: l.id,
-      name: l.name,
-      divisionId: l.divisionId,
-      divisionName: l.division.name,
-      tier: l.division.tier,
-      divisionRank: l.division.rank,
-      buyInCents: l.buyInCents,
-      rakeBps: l.rakeBps,
-      capacity: l.capacity,
-      // Entries arrive in Slice 4; until then every league reads as open.
-      spotsFilled: 0,
-      status: l.status,
-      startsAt: l.startsAt,
-    }));
-
-    return { season, rows };
+    return { season, rows: leagues.map(toRow) };
   }
 
   /** Single league with division context, or null. Used by /leagues/[id]. */
   async getLeague(id: string): Promise<LeagueRow | null> {
-    const l = await this.prisma.league.findUnique({
+    const league = await this.prisma.league.findUnique({
       where: { id },
-      include: {
-        division: { select: { name: true, tier: true, rank: true } },
+      include: LEAGUE_ROW_INCLUDE,
+    });
+    return league ? toRow(league) : null;
+  }
+
+  /**
+   * Everyone currently holding a seat, in join order. Standings proper arrive
+   * with the match engine (Slices 5/7) — until then this is the roster.
+   */
+  async entrants(leagueId: string): Promise<Entrant[]> {
+    const entries = await this.prisma.leagueEntry.findMany({
+      where: { leagueId, status: "ACTIVE" },
+      orderBy: { joinedAt: "asc" },
+      select: {
+        userId: true,
+        joinedAt: true,
+        user: { select: { displayName: true } },
       },
     });
-    if (!l) return null;
-    return {
-      id: l.id,
-      name: l.name,
-      divisionId: l.divisionId,
-      divisionName: l.division.name,
-      tier: l.division.tier,
-      divisionRank: l.division.rank,
-      buyInCents: l.buyInCents,
-      rakeBps: l.rakeBps,
-      capacity: l.capacity,
-      spotsFilled: 0,
-      status: l.status,
-      startsAt: l.startsAt,
-    };
+    return entries.map((e) => ({
+      userId: e.userId,
+      displayName: e.user.displayName,
+      joinedAt: e.joinedAt,
+    }));
+  }
+
+  /**
+   * The viewer's live entry in a league, or null. A REFUNDED entry is not an
+   * entry — the seat was released — so the detail page renders "not entered".
+   */
+  async entryFor(leagueId: string, userId: string): Promise<ViewerEntry | null> {
+    const entry = await this.prisma.leagueEntry.findUnique({
+      where: { leagueId_userId: { leagueId, userId } },
+      select: {
+        id: true,
+        status: true,
+        buyInCents: true,
+        joinedAt: true,
+      },
+    });
+    return entry && entry.status === "ACTIVE" ? entry : null;
   }
 
   // --- Admin authoring --------------------------------------------------

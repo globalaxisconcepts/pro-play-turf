@@ -16,6 +16,9 @@ CREATE TYPE "Tier" AS ENUM ('AMATEUR', 'INTERMEDIATE', 'ADVANCED', 'ELITE', 'CHA
 -- CreateEnum
 CREATE TYPE "LeagueStatus" AS ENUM ('OPEN', 'FILLING', 'LIVE', 'ENDED');
 
+-- CreateEnum
+CREATE TYPE "EntryStatus" AS ENUM ('ACTIVE', 'REFUNDED');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -102,6 +105,19 @@ CREATE TABLE "League" (
     CONSTRAINT "League_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "LeagueEntry" (
+    "id" TEXT NOT NULL,
+    "leagueId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "escrowTxnId" TEXT,
+    "buyInCents" BIGINT NOT NULL DEFAULT 0,
+    "status" "EntryStatus" NOT NULL DEFAULT 'ACTIVE',
+    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "LeagueEntry_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -129,6 +145,15 @@ CREATE INDEX "League_divisionId_idx" ON "League"("divisionId");
 -- CreateIndex
 CREATE INDEX "League_status_idx" ON "League"("status");
 
+-- CreateIndex
+CREATE INDEX "LeagueEntry_leagueId_status_idx" ON "LeagueEntry"("leagueId", "status");
+
+-- CreateIndex
+CREATE INDEX "LeagueEntry_userId_idx" ON "LeagueEntry"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "LeagueEntry_leagueId_userId_key" ON "LeagueEntry"("leagueId", "userId");
+
 -- AddForeignKey
 ALTER TABLE "Wallet" ADD CONSTRAINT "Wallet_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -143,4 +168,10 @@ ALTER TABLE "Division" ADD CONSTRAINT "Division_seasonId_fkey" FOREIGN KEY ("sea
 
 -- AddForeignKey
 ALTER TABLE "League" ADD CONSTRAINT "League_divisionId_fkey" FOREIGN KEY ("divisionId") REFERENCES "Division"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LeagueEntry" ADD CONSTRAINT "LeagueEntry_leagueId_fkey" FOREIGN KEY ("leagueId") REFERENCES "League"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LeagueEntry" ADD CONSTRAINT "LeagueEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

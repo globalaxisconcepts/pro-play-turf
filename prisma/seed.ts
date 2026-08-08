@@ -2,7 +2,8 @@ import { Bucket, type LeagueStatus, type Tier } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { DEMO_ADMIN_USER_ID, DEMO_USER_ID } from "@/server/auth";
 import { SYSTEM_USER_ID, SYSTEM_WALLET_ID } from "@/server/ledger/system";
-import { ledgerService } from "@/server/services";
+import { AlreadyJoinedError } from "@/server/leagues/errors";
+import { joinService, ledgerService } from "@/server/services";
 
 /**
  * Seeds a believable demo on test credits. Idempotent: users/wallets are
@@ -102,19 +103,12 @@ async function main() {
       { walletId: SYSTEM_WALLET_ID, bucket: Bucket.PRIZE_POOL, amountCents: -42_000n },
     ],
   });
-  await ledgerService.post({
-    txnId: "seed-hold-1",
-    reason: "ENTRY_HOLD",
-    refType: "league",
-    refId: "contender-league",
-    lines: [
-      { walletId: demoWallet.id, bucket: Bucket.AVAILABLE, amountCents: -5_000n },
-      { walletId: demoWallet.id, bucket: Bucket.ESCROW, amountCents: 5_000n },
-    ],
-  });
-
   // --- Slice 3: current season + divisions + leagues ---
   await seedLeagues();
+
+  // --- Slice 4: real entries. Escrow is created by joining, never by hand, so
+  // the held funds always have an entry behind them. ---
+  await seedEntries();
 
   await reconcile();
   console.log("✓ Seed complete. Ledger reconciled; cached balances == ledger sums.");
@@ -180,6 +174,46 @@ async function seedLeagues() {
       update: {},
       create: l,
     });
+  }
+}
+
+/**
+ * Puts players into leagues through the real join path, so the demo shows
+ * genuine escrow and honest capacity bars. Idempotent: a re-seed hits the
+ * double-join guard, which we treat as "already done".
+ */
+async function seedEntries() {
+  // The demo pro holds a real $50 buy-in in escrow.
+  await ensureEntry("lg-elite-a", DEMO_USER_ID);
+
+  // A few rivals fill the free Amateur league so the capacity bar isn't empty.
+  for (let i = 1; i <= 5; i++) {
+    const id = `rival-${i}`;
+    await prisma.user.upsert({
+      where: { id },
+      update: {},
+      create: {
+        id,
+        email: `${id}@proplayturf.com`,
+        displayName: `Rival ${i}`,
+        role: "PLAYER",
+      },
+    });
+    await prisma.wallet.upsert({
+      where: { userId: id },
+      update: {},
+      create: { userId: id },
+    });
+    await ensureEntry("lg-am-a", id);
+  }
+}
+
+async function ensureEntry(leagueId: string, userId: string) {
+  try {
+    await joinService.joinLeague({ leagueId, userId });
+  } catch (err) {
+    if (err instanceof AlreadyJoinedError) return; // re-seed, already in
+    throw err;
   }
 }
 
