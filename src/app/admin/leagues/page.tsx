@@ -5,6 +5,7 @@ import { auth } from "@/server/auth";
 import { leagueService } from "@/server/services";
 import { spotsLeft } from "@/server/leagues/types";
 import {
+  closeSeasonAction,
   createDivisionAction,
   createLeagueAction,
   createSeasonAction,
@@ -212,6 +213,18 @@ export default async function AdminLeaguesPage() {
               <h3>
                 {s.name} <span className="admin-pill">{s.status}</span>
               </h3>
+              {s.status !== "CLOSED" && (
+                <form action={closeSeasonAction} className="admin-close">
+                  <input type="hidden" name="seasonId" value={s.id} />
+                  <button type="submit" className="btn btn-ghost">
+                    Close season &amp; promote/relegate
+                  </button>
+                  <span className="admin-empty">
+                    Freezes every final table, moves players up and down, and
+                    opens the next season. Safe to re-run.
+                  </span>
+                </form>
+              )}
               {s.divisions.length === 0 ? (
                 <p className="admin-empty">No divisions.</p>
               ) : (

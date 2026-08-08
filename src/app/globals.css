@@ -2346,6 +2346,46 @@ h3 {
   flex: none;
 }
 
+/* Standings table */
+.lg-standings td:first-child {
+  font-family: var(--tech);
+  color: var(--t3);
+}
+.lg-standings tr[data-zone="promotion"] td:first-child {
+  border-left: 3px solid var(--primary);
+  color: var(--primary);
+}
+.lg-standings tr[data-zone="relegation"] td:first-child {
+  border-left: 3px solid var(--live);
+  color: var(--live);
+}
+.lg-zone-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--t3);
+}
+.lg-zone-dot {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+.lg-zone-dot[data-zone="relegation"] {
+  background: var(--live);
+  margin-left: 12px;
+}
+.admin-close {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 /* Review queue (tribunal) */
 .rv-queue {
   display: flex;

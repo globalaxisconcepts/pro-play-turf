@@ -17,6 +17,9 @@ CREATE TYPE "Tier" AS ENUM ('AMATEUR', 'INTERMEDIATE', 'ADVANCED', 'ELITE', 'CHA
 CREATE TYPE "LeagueStatus" AS ENUM ('OPEN', 'FILLING', 'LIVE', 'ENDED');
 
 -- CreateEnum
+CREATE TYPE "StandingOutcome" AS ENUM ('PROMOTED', 'RELEGATED', 'STAYED');
+
+-- CreateEnum
 CREATE TYPE "EntryStatus" AS ENUM ('ACTIVE', 'REFUNDED');
 
 -- CreateEnum
@@ -80,11 +83,32 @@ CREATE TABLE "Season" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "status" "SeasonStatus" NOT NULL DEFAULT 'UPCOMING',
+    "previousSeasonId" TEXT,
     "startsAt" TIMESTAMP(3),
     "endsAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Season_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Standing" (
+    "id" TEXT NOT NULL,
+    "leagueId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "position" INTEGER NOT NULL,
+    "played" INTEGER NOT NULL,
+    "won" INTEGER NOT NULL,
+    "drawn" INTEGER NOT NULL,
+    "lost" INTEGER NOT NULL,
+    "goalsFor" INTEGER NOT NULL,
+    "goalsAgainst" INTEGER NOT NULL,
+    "points" INTEGER NOT NULL,
+    "outcome" "StandingOutcome" NOT NULL DEFAULT 'STAYED',
+    "nextDivisionId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Standing_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -213,7 +237,19 @@ CREATE INDEX "LedgerEntry_walletId_idx" ON "LedgerEntry"("walletId");
 CREATE INDEX "LedgerEntry_txnId_idx" ON "LedgerEntry"("txnId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Season_previousSeasonId_key" ON "Season"("previousSeasonId");
+
+-- CreateIndex
 CREATE INDEX "Season_status_idx" ON "Season"("status");
+
+-- CreateIndex
+CREATE INDEX "Standing_leagueId_idx" ON "Standing"("leagueId");
+
+-- CreateIndex
+CREATE INDEX "Standing_userId_idx" ON "Standing"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Standing_leagueId_userId_key" ON "Standing"("leagueId", "userId");
 
 -- CreateIndex
 CREATE INDEX "Division_seasonId_idx" ON "Division"("seasonId");
@@ -277,6 +313,12 @@ ALTER TABLE "LedgerEntry" ADD CONSTRAINT "LedgerEntry_txnId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "LedgerEntry" ADD CONSTRAINT "LedgerEntry_walletId_fkey" FOREIGN KEY ("walletId") REFERENCES "Wallet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Standing" ADD CONSTRAINT "Standing_leagueId_fkey" FOREIGN KEY ("leagueId") REFERENCES "League"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Standing" ADD CONSTRAINT "Standing_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Division" ADD CONSTRAINT "Division_seasonId_fkey" FOREIGN KEY ("seasonId") REFERENCES "Season"("id") ON DELETE CASCADE ON UPDATE CASCADE;

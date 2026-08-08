@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { parseCents } from "@/lib/money";
 import { auth } from "@/server/auth";
-import { leagueService, matchService } from "@/server/services";
+import { leagueService, matchService, seasonService } from "@/server/services";
 
 /** Server actions are directly invocable — re-check ADMIN on every one. */
 async function requireAdmin(): Promise<void> {
@@ -96,5 +96,18 @@ export async function generateFixturesAction(formData: FormData): Promise<void> 
   await matchService.generateFixtures(leagueId);
   revalidatePath("/admin/leagues");
   revalidatePath(`/leagues/${leagueId}`);
+  revalidatePath("/leagues");
+}
+
+/**
+ * Close the season: freeze every final table, apply promotion/relegation, and
+ * open the next. Runs inline rather than via Inngest so the admin sees the
+ * result immediately; the same call is idempotent either way.
+ */
+export async function closeSeasonAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  const seasonId = z.string().min(1).parse(formData.get("seasonId"));
+  await seasonService.closeSeason(seasonId);
+  revalidatePath("/admin/leagues");
   revalidatePath("/leagues");
 }

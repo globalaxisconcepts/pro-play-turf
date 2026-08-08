@@ -7,7 +7,12 @@ import { formatCents } from "@/lib/money";
 import { getSession } from "@/server/auth";
 import { prizeBreakdown } from "@/server/leagues/prize";
 import { projectedPoolCents, spotsLeft } from "@/server/leagues/types";
-import { leagueService, matchService, walletService } from "@/server/services";
+import {
+  leagueService,
+  matchService,
+  seasonService,
+  walletService,
+} from "@/server/services";
 import { JoinPanel, type JoinAvailability } from "./_components/JoinPanel";
 
 export const dynamic = "force-dynamic";
@@ -68,11 +73,12 @@ export default async function LeagueDetailPage({
 
   const tab = toTab(sp);
   const session = await getSession();
-  const [entry, balances, entrants, fixtures] = await Promise.all([
+  const [entry, balances, entrants, fixtures, standings] = await Promise.all([
     session ? leagueService.entryFor(id, session.userId) : null,
     session ? walletService.getBalances(session.userId) : null,
     leagueService.entrants(id),
     matchService.listFixtures(id),
+    seasonService.standingsFor(id),
   ]);
 
   const isFree = row.buyInCents === 0n;
@@ -181,37 +187,58 @@ export default async function LeagueDetailPage({
             ) : (
               <>
                 <p className="lg-panel-note">
-                  Standings start counting when the league goes live. This is the
-                  current roster.
+                  3 points for a win, 1 for a draw. Ranked on points, then goal
+                  difference, then goals scored. Only verified results count —
+                  a voided match leaves no trace here.
                 </p>
-                <table className="tx-table">
+                <table className="tx-table lg-standings">
                   <thead>
                     <tr>
                       <th>#</th>
                       <th>Player</th>
-                      <th className="hide-sm">Joined</th>
+                      <th>P</th>
+                      <th className="hide-sm">W</th>
+                      <th className="hide-sm">D</th>
+                      <th className="hide-sm">L</th>
+                      <th className="hide-sm">GD</th>
+                      <th>Pts</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {entrants.map((e, i) => (
+                    {standings.map((row) => (
                       <tr
-                        key={e.userId}
-                        data-you={e.userId === session?.userId || undefined}
+                        key={row.userId}
+                        data-you={row.userId === session?.userId || undefined}
+                        data-zone={zoneOf(row.position, standings.length)}
                       >
-                        <td>{i + 1}</td>
+                        <td>{row.position}</td>
                         <td>
-                          {e.displayName}
-                          {e.userId === session?.userId && (
+                          {row.displayName}
+                          {row.userId === session?.userId && (
                             <span className="lg-you">You</span>
                           )}
                         </td>
+                        <td>{row.played}</td>
+                        <td className="hide-sm">{row.won}</td>
+                        <td className="hide-sm">{row.drawn}</td>
+                        <td className="hide-sm">{row.lost}</td>
                         <td className="hide-sm">
-                          {e.joinedAt.toLocaleDateString()}
+                          {row.goalDifference > 0 ? "+" : ""}
+                          {row.goalDifference}
+                        </td>
+                        <td>
+                          <strong>{row.points}</strong>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                <p className="lg-zone-key">
+                  <span className="lg-zone-dot" data-zone="promotion" /> Top 3
+                  promote
+                  <span className="lg-zone-dot" data-zone="relegation" /> Bottom
+                  3 relegate
+                </p>
               </>
             )}
           </>
@@ -332,6 +359,15 @@ export default async function LeagueDetailPage({
       </section>
     </main>
   );
+}
+
+/** Promotion/relegation shading, matching the "top 3 up, bottom 3 down" promise. */
+function zoneOf(position: number, size: number): string | undefined {
+  const band = Math.min(3, Math.floor(size / 2));
+  if (band === 0) return undefined;
+  if (position <= band) return "promotion";
+  if (position > size - band) return "relegation";
+  return undefined;
 }
 
 function ordinal(n: number): string {

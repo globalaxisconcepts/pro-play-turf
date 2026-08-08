@@ -43,6 +43,7 @@ model User {
   submissions MatchSubmission[]
   proofs      MatchProof[]
   disputes    MatchDispute[]    @relation("DisputesRaised")
+  standings   Standing[]
   createdAt   DateTime          @default(now())
 }
 
@@ -112,15 +113,56 @@ enum LeagueStatus {
 }
 
 model Season {
-  id        String       @id @default(cuid())
-  name      String
-  status    SeasonStatus @default(UPCOMING)
-  startsAt  DateTime?
-  endsAt    DateTime?
-  createdAt DateTime     @default(now())
-  divisions Division[]
+  id               String       @id @default(cuid())
+  name             String
+  status           SeasonStatus @default(UPCOMING)
+  // Set when this season was opened by closing another. Makes season-close
+  // idempotent: re-running finds the successor instead of creating a second.
+  previousSeasonId String?      @unique
+  startsAt         DateTime?
+  endsAt           DateTime?
+  createdAt        DateTime     @default(now())
+  divisions        Division[]
 
   @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Slice 7 — the final table, frozen at season close. Live standings are DERIVED
+// from verified matches (so voiding one corrects the table automatically); this
+// is the archived record of how a league finished and where each player goes.
+// ---------------------------------------------------------------------------
+
+enum StandingOutcome {
+  PROMOTED
+  RELEGATED
+  STAYED
+}
+
+model Standing {
+  id             String          @id @default(cuid())
+  leagueId       String
+  league         League          @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position       Int
+  played         Int
+  won            Int
+  drawn          Int
+  lost           Int
+  goalsFor       Int
+  goalsAgainst   Int
+  points         Int
+  outcome        StandingOutcome @default(STAYED)
+  // Where this player is eligible to play next season. Placement is an
+  // invitation, not an enrolment — joining still costs a buy-in, and no code
+  // may move a player's money without them asking.
+  nextDivisionId String?
+  createdAt      DateTime        @default(now())
+
+  @@unique([leagueId, userId])
+  @@index([leagueId])
+  @@index([userId])
 }
 
 model Division {
@@ -149,6 +191,7 @@ model League {
   createdAt  DateTime      @default(now())
   entries    LeagueEntry[]
   matches    Match[]
+  standings  Standing[]
 
   @@index([divisionId])
   @@index([status])
