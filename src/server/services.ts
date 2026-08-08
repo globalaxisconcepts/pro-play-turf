@@ -12,6 +12,8 @@ import { MatchService } from "./matches/match-service";
 import { ReviewService } from "./matches/review-service";
 import { UnavailableProofStorage } from "./matches/proof-storage";
 import { StubPaymentProvider } from "./payments/stub-provider";
+import { EmbedOnlyStreamProvider } from "./streams/provider";
+import { StreamService } from "./streams/stream-service";
 import { WalletService } from "./wallet/wallet-service";
 
 /**
@@ -31,5 +33,9 @@ export const marketService = new MarketService(prisma, ledgerService, cardCustod
 export const seasonService = new SeasonService(prisma, prizeService, cardService);
 export const matchService = new MatchService(prisma);
 export const reviewService = new ReviewService(prisma);
+/** Swap for a Twitch/YouTube API implementation to switch live status on. */
+export const streamProvider = new EmbedOnlyStreamProvider();
+export const streamService = new StreamService(prisma, streamProvider);
+
 /** Swap for a Blob/S3/R2 implementation to switch screenshot uploads on. */
 export const proofStorage = new UnavailableProofStorage();

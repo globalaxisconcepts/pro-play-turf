@@ -26,6 +26,9 @@ CREATE TYPE "CardStatus" AS ENUM ('OWNED', 'LISTED', 'SURRENDERED');
 CREATE TYPE "ListingStatus" AS ENUM ('ACTIVE', 'SOLD', 'CANCELLED');
 
 -- CreateEnum
+CREATE TYPE "StreamPlatform" AS ENUM ('TWITCH', 'YOUTUBE');
+
+-- CreateEnum
 CREATE TYPE "EntryStatus" AS ENUM ('ACTIVE', 'REFUNDED');
 
 -- CreateEnum
@@ -172,6 +175,21 @@ CREATE TABLE "CardTxn" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "CardTxn_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StreamLink" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "platform" "StreamPlatform" NOT NULL,
+    "channel" TEXT NOT NULL,
+    "isLive" BOOLEAN NOT NULL DEFAULT false,
+    "title" TEXT,
+    "viewers" INTEGER,
+    "checkedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "StreamLink_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -339,6 +357,12 @@ CREATE INDEX "CardListing_sellerUserId_idx" ON "CardListing"("sellerUserId");
 CREATE INDEX "CardTxn_cardInstanceId_idx" ON "CardTxn"("cardInstanceId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "StreamLink_userId_key" ON "StreamLink"("userId");
+
+-- CreateIndex
+CREATE INDEX "StreamLink_isLive_idx" ON "StreamLink"("isLive");
+
+-- CreateIndex
 CREATE INDEX "Division_seasonId_idx" ON "Division"("seasonId");
 
 -- CreateIndex
@@ -421,6 +445,9 @@ ALTER TABLE "CardListing" ADD CONSTRAINT "CardListing_sellerUserId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "CardTxn" ADD CONSTRAINT "CardTxn_cardInstanceId_fkey" FOREIGN KEY ("cardInstanceId") REFERENCES "CardInstance"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StreamLink" ADD CONSTRAINT "StreamLink_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Division" ADD CONSTRAINT "Division_seasonId_fkey" FOREIGN KEY ("seasonId") REFERENCES "Season"("id") ON DELETE CASCADE ON UPDATE CASCADE;

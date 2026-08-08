@@ -46,6 +46,7 @@ model User {
   standings   Standing[]
   cards       CardInstance[]
   listings    CardListing[]     @relation("Listings")
+  stream      StreamLink?
   createdAt   DateTime          @default(now())
 }
 
@@ -264,6 +265,35 @@ model CardTxn {
   createdAt      DateTime     @default(now())
 
   @@index([cardInstanceId])
+}
+
+// ---------------------------------------------------------------------------
+// Slice 11 — streaming. Embeds and VOD links need no credentials, so they work
+// today; knowing whether a channel is LIVE needs the platform's API, which sits
+// behind StreamProvider until an app is registered.
+// ---------------------------------------------------------------------------
+
+enum StreamPlatform {
+  TWITCH
+  YOUTUBE
+}
+
+model StreamLink {
+  id        String         @id @default(cuid())
+  userId    String         @unique
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  StreamPlatform
+  /// Twitch login or YouTube channel id / handle.
+  channel   String
+  // Cached live state, refreshed by the polling job. Stale by definition —
+  // never treat it as authoritative for anything that matters.
+  isLive    Boolean        @default(false)
+  title     String?
+  viewers   Int?
+  checkedAt DateTime?
+  createdAt DateTime       @default(now())
+
+  @@index([isLive])
 }
 
 model Division {
