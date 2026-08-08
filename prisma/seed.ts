@@ -6,13 +6,21 @@ import { AlreadyJoinedError } from "@/server/leagues/errors";
 import { joinService, ledgerService } from "@/server/services";
 
 /**
- * Seeds a believable demo on test credits. Idempotent: users/wallets are
- * upserted and ledger txns use fixed ids, so re-running `db:seed` is a no-op.
- * Balances are ONLY ever created by posting through LedgerService — never by
- * writing Wallet rows directly (per the money invariants).
+ * Opt-in demo accounts. OFF by default so seeding a live database can't invent
+ * fake players with fake balances — set SEED_DEMO_DATA=1 for local development.
+ * The SYSTEM wallet and the league structure are seeded either way: the first is
+ * required by the ledger, the second is real product content.
+ */
+const SEED_DEMO_DATA = process.env.SEED_DEMO_DATA === "1";
+
+/**
+ * Idempotent: users/wallets are upserted and ledger txns use fixed ids, so
+ * re-running `db:seed` is a no-op. Balances are ONLY ever created by posting
+ * through LedgerService — never by writing Wallet rows directly (per the money
+ * invariants).
  */
 async function main() {
-  // --- SYSTEM / HOUSE singleton ---
+  // --- SYSTEM / HOUSE singleton (always — the ledger needs it) ---
   await prisma.user.upsert({
     where: { id: SYSTEM_USER_ID },
     update: {},
@@ -29,6 +37,24 @@ async function main() {
     create: { id: SYSTEM_WALLET_ID, userId: SYSTEM_USER_ID },
   });
 
+  // --- Season / divisions / leagues (always — this is the real ladder) ---
+  await seedLeagues();
+
+  if (!SEED_DEMO_DATA) {
+    await reconcile();
+    console.log(
+      "✓ Seed complete (structure only). Set SEED_DEMO_DATA=1 to include demo players and balances.",
+    );
+    return;
+  }
+
+  await seedDemoAccounts();
+  await reconcile();
+  console.log("✓ Seed complete. Ledger reconciled; cached balances == ledger sums.");
+}
+
+/** Demo players, their test-credit history, and their league entries. */
+async function seedDemoAccounts() {
   // --- Demo pro (rich account) ---
   await prisma.user.upsert({
     where: { id: DEMO_USER_ID },
@@ -103,15 +129,9 @@ async function main() {
       { walletId: SYSTEM_WALLET_ID, bucket: Bucket.PRIZE_POOL, amountCents: -42_000n },
     ],
   });
-  // --- Slice 3: current season + divisions + leagues ---
-  await seedLeagues();
-
   // --- Slice 4: real entries. Escrow is created by joining, never by hand, so
   // the held funds always have an entry behind them. ---
   await seedEntries();
-
-  await reconcile();
-  console.log("✓ Seed complete. Ledger reconciled; cached balances == ledger sums.");
 }
 
 /**
