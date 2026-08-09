@@ -10,7 +10,7 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
         { label: "Live & VODs", href: "/#scores" },
         { label: "Champions League", href: "/#champions" },
         { label: "Leaderboards", href: "/#champions" },
-        { label: "Streaming Guide", href: "/#how" },
+        { label: "Tournament Rules", href: "/rules" },
       ],
     },
     {
@@ -25,10 +25,12 @@ const COLUMNS: { heading: string; links: { label: string; href: string }[] }[] =
     {
       heading: "Legal",
       links: [
-        { label: "Terms of Service", href: "/#how" },
-        { label: "Privacy Policy", href: "/#how" },
-        { label: "Responsible Play", href: "/#how" },
-        { label: "Cookie Settings", href: "/#how" },
+        { label: "Terms of Service", href: "/terms" },
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Responsible Play", href: "/responsible-play" },
+        // Not "Cookie Settings": one strictly-necessary cookie and no trackers,
+        // so there is nothing to configure. A settings panel would be theatre.
+        { label: "Cookies", href: "/privacy#cookies" },
       ],
     },
   ];

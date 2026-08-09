@@ -168,7 +168,11 @@ export function JoinPanel(props: JoinPanelProps) {
                     <Link href={`/leagues/${leagueId}?tab=rules`}>
                       league rules
                     </Link>{" "}
-                    and fair-play policy.
+                    and the{" "}
+                    <Link href="/rules" target="_blank">
+                      fair-play policy
+                    </Link>
+                    .
                   </span>
                 </label>
               )}

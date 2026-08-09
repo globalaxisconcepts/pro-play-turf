@@ -16,7 +16,7 @@ beta on test credits once the items in §1 are done.
 | ☐ | Legal opinion on skill-gaming in target markets | **Not started.** Your track, not the codebase's. |
 | ☐ | KYC provider selected and integrated | **Not started.** Gated behind Slice 13. |
 | ☐ | Geo-restriction enforcement | **Not started.** |
-| ☐ | Terms, Privacy, and Responsible Play pages published | **Not written.** The age gate references policies that don't exist yet as pages. |
+| ⚠️ | Terms, Privacy, and Responsible Play pages published | **Drafted and live** at `/terms`, `/privacy`, `/responsible-play`, `/rules`, and linked from the age gate and footer. **Not yet reviewed by a solicitor** — governing law and the restricted-territories schedule are marked fill-ins. |
 | ☐ | Withdrawals actually possible | **No.** `capabilities.withdrawals === false`. |
 | ✅ | Test-credit deposits cannot mint money in production | Gated behind `ENABLE_TEST_CREDIT_DEPOSITS=1`, off by default. |
 | ✅ | Marketing copy doesn't promise what doesn't exist | "Instant Withdrawals" → "Instant Settlement"; pool figure marked as a target. |

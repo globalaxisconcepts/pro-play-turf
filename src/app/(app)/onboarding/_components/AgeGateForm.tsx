@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { acceptTermsAction, type OnboardingState } from "../actions";
@@ -33,11 +34,24 @@ export function AgeGateForm({ minAge }: { minAge: number }) {
         eligibility.
       </p>
 
+      {/* Every named document is linked. Consent to something a person cannot
+          read is not consent. */}
       <label className="lg-accept">
         <input type="checkbox" name="acceptTerms" required />
         <span>
-          I accept the terms, the fair-play policy, and the responsible-play
-          policy, and confirm the details above are true.
+          I accept the{" "}
+          <Link href="/terms" target="_blank">
+            Terms of Service
+          </Link>
+          , the{" "}
+          <Link href="/rules" target="_blank">
+            Fair Play Rules
+          </Link>
+          , and the{" "}
+          <Link href="/responsible-play" target="_blank">
+            Responsible Play Policy
+          </Link>
+          , and confirm the details above are true.
         </span>
       </label>
 

@@ -1,3 +1,5 @@
+import { CONTACT } from "@/lib/contact";
+
 export const CURRENT_TERMS_VERSION = "2026-08-01";
 
 export interface ComplianceRecord {
@@ -36,7 +38,7 @@ const MESSAGES: Record<GateFailure, string> = {
   UNDERAGE: "You must meet the minimum age to take part.",
   TERMS_NOT_ACCEPTED: "Accept the terms and responsible-play policy to continue.",
   TERMS_OUTDATED: "Our terms have changed — please review and accept them.",
-  RESTRICTED: "This account is restricted. Contact support.",
+  RESTRICTED: `This account is restricted. Email ${CONTACT.support} and we'll explain why.`,
 };
 
 /**
